@@ -1,0 +1,6 @@
+{
+  "name": "AWS Second-Hand Vehicle Marketplace",
+  "description": "An e-commerce platform for buying and selling second-hand vehicles, integrated with AWS Cloud architectures for secure payments, escrow, storage, and auto-scaling.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
