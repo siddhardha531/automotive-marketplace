@@ -134,8 +134,9 @@ export default function BuyerPortal({
 
   // Handle Checkout Click
   const handlePurchase = (vehicle: Vehicle) => {
-    if (currentUser.balance < vehicle.price) {
-      alert(`Insufficient balance. Your current simulated wallet balance is $${currentUser.balance.toLocaleString()}. You need $${vehicle.price.toLocaleString()} to purchase this vehicle.`);
+    const balance = currentUser?.balance ?? 0;
+    if (balance < vehicle.price) {
+      alert(`Insufficient balance. Your current simulated wallet balance is $${balance.toLocaleString()}. You need $${vehicle.price.toLocaleString()} to purchase this vehicle.`);
       return;
     }
 
@@ -491,8 +492,8 @@ export default function BuyerPortal({
 
                 <div className="flex flex-col items-end">
                   <span className="text-[10px] text-slate-400 font-mono block">YOUR WALLET BALANCE</span>
-                  <span className={`text-sm font-bold font-mono ${currentUser.balance >= selectedVehicle.price ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {formatPrice(currentUser.balance)}
+                  <span className={`text-sm font-bold font-mono ${(currentUser?.balance ?? 0) >= selectedVehicle.price ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {formatPrice(currentUser?.balance ?? 0)}
                   </span>
                 </div>
               </div>
