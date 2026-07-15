@@ -2,8 +2,9 @@
 # Reference: https://render.com/docs/blueprints
 
 services:
-  - type: static
+  - type: web
     name: aws-vehicle-marketplace
+    env: static
     buildCommand: npm run build
     publishPath: dist
     headers:
