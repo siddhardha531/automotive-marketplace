@@ -298,7 +298,7 @@ export default function UserProfile({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
               <div className="bg-slate-900 text-white p-5 rounded-xl border border-slate-800 shadow-inner">
                 <span className="text-[10px] font-mono text-slate-400 uppercase">Available Checkout Funds</span>
-                <p className="text-3xl font-extrabold font-mono text-white mt-1">{formatPrice(currentUser.balance)}</p>
+                <p className="text-3xl font-extrabold font-mono text-white mt-1">{formatPrice(currentUser?.balance ?? 0)}</p>
                 <p className="text-[9px] text-emerald-400 mt-1 font-mono flex items-center gap-1">
                   <Check className="h-3 w-3" /> Fully Liquid Escrow Ready
                 </p>
