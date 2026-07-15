@@ -1,11 +1,10 @@
 # Render Blueprint Specification
 # Reference: https://render.com/docs/blueprints
 
-services:
-  - type: static_site
-    name: aws-vehicle-marketplace
+staticSites:
+  - name: aws-vehicle-marketplace
     buildCommand: npm run build
-    publishPath: dist
+    publishDir: dist
     headers:
       - path: /*
         name: Cache-Control
