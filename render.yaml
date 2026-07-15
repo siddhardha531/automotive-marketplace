@@ -1,4 +1,20 @@
 # Render Blueprint Specification
 # Reference: https://render.com/docs/blueprints
-
+services:
+  - type: static
+    name: aws-vehicle-marketplace
+    buildCommand: npm run build
+    publishPath: dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+    routes:
+      # Support single-page application rewrites (routes all paths back to index.html for client-side routing)
+      - type: rewrite
+        source: /*
+        destination: /index.html
 
