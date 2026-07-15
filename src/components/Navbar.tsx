@@ -99,7 +99,7 @@ export default function Navbar({
             {isLoggedIn && (
               <div className="hidden sm:flex flex-col items-end font-mono text-xs">
                 <span className="text-[9px] text-gray-400">LIQUID BALANCE</span>
-                <span className="font-bold text-emerald-400">{formatPrice(currentUser.balance)}</span>
+                <span className="font-bold text-emerald-400">{formatPrice(currentUser?.balance ?? 0)}</span>
               </div>
             )}
 
@@ -119,15 +119,15 @@ export default function Navbar({
               title={isLoggedIn ? "Manage profile & wallets" : "Sign in to AWS AutoMarket"}
             >
               <img 
-                src={currentUser.avatar} 
-                alt={currentUser.name} 
+                src={currentUser?.avatar ?? ''} 
+                alt={currentUser?.name ?? 'Guest Explorer'} 
                 className="h-8 w-8 rounded-full object-cover border border-slate-700"
                 referrerPolicy="no-referrer"
               />
               <div className="hidden lg:block text-left text-xs">
-                <p className="font-bold text-white max-w-[100px] truncate leading-tight">{currentUser.name}</p>
+                <p className="font-bold text-white max-w-[100px] truncate leading-tight">{currentUser?.name ?? 'Guest Explorer'}</p>
                 <p className="text-[9px] text-gray-400 uppercase tracking-wider -mt-0.5 font-semibold font-mono">
-                  {isLoggedIn ? currentUser.role : 'GUEST'}
+                  {isLoggedIn ? (currentUser?.role ?? 'GUEST') : 'GUEST'}
                 </p>
               </div>
             </div>
