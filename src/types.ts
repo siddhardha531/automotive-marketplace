@@ -33,6 +33,7 @@ export interface User {
   balance: number; // Simulated escrow/payment wallet balance
   googleUser?: boolean;
   facebookUser?: boolean;
+  password?: string;
 }
 
 export interface Review {
