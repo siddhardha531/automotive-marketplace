@@ -3,8 +3,9 @@ import {
   User, Mail, Shield, ShieldCheck, Key, LogIn, Lock, 
   Plus, Check, RefreshCw, Smartphone, Facebook, Chrome,
   ShieldAlert, Eye, EyeOff, AlertCircle, X, Edit3, Save
-} from 'lucide-react';
+ } from 'lucide-react';
 import { User as UserType } from '../types';
+import { DEFAULT_AVATAR } from '../data';
 
 interface UserProfileProps {
   currentUser: UserType;
@@ -59,8 +60,7 @@ export default function UserProfile({
     setEditError('');
   }, [currentUser]);
 
-  // Switch account verification modal states
-  const [switchingTargetUser, setSwitchingTargetUser] = useState<UserType | null>(null);
+  // Switch account verification states
   const [switchEmailInput, setSwitchEmailInput] = useState('');
   const [switchPasswordInput, setSwitchPasswordInput] = useState('');
   const [switchError, setSwitchError] = useState('');
@@ -81,7 +81,7 @@ export default function UserProfile({
       ...currentUser,
       name: editName.trim(),
       email: editEmail.trim().toLowerCase(),
-      avatar: editAvatar.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
+      avatar: editAvatar.trim() || DEFAULT_AVATAR,
     };
 
     if (onUpdateUser) {
@@ -365,9 +365,7 @@ export default function UserProfile({
                       name: signUpName.trim(),
                       email: signUpEmail.trim().toLowerCase(),
                       role: signUpRole,
-                      avatar: signUpRole === 'buyer' 
-                        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150' 
-                        : 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150',
+                      avatar: DEFAULT_AVATAR,
                       balance: signUpBalance,
                       password: signUpPassword
                     };
@@ -671,41 +669,89 @@ export default function UserProfile({
             </div>
           </div>
 
-          {/* DEMO TOOL: Switch Accounts */}
-          <div className="bg-slate-50 border border-amber-200/50 p-6 rounded-xl">
-            <h3 className="font-bold text-slate-900 text-sm mb-1.5">Demo Mode Role Switcher</h3>
+          {/* SECURE: Switch Accounts */}
+          <div className="bg-slate-50 border border-slate-200 p-6 rounded-xl">
+            <h3 className="font-bold text-slate-900 text-sm mb-1.5 flex items-center gap-1.5">
+              <Key className="h-4 w-4 text-[#FF9900]" />
+              Switch to Another Account
+            </h3>
             <p className="text-xs text-gray-500 leading-relaxed mb-4">
-              To test the escrow system complete flow, you can toggle between a buyer (to buy a car) and sellers (to see their funds arrive or manage listings) or the administrator (to release funds or flag vehicles).
+              To toggle accounts and test the escrow flow, please verify the Cognito credentials of the target profile. No other account names or user profiles are listed here to ensure strict identity privacy.
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-xs">
-              {users.map(u => (
-                <button
-                  key={u.id}
-                  onClick={() => {
-                    // Pre-fill target and open credentials authentication dialog
-                    setSwitchingTargetUser(u);
-                    setSwitchEmailInput('');
-                    setSwitchPasswordInput('');
-                    setSwitchError('');
-                  }}
-                  className={`p-3.5 rounded-lg border-2 text-center transition-all cursor-pointer ${
-                    currentUser.id === u.id 
-                      ? 'bg-amber-500/10 border-amber-500 font-bold text-amber-950 shadow-sm' 
-                      : 'bg-white border-gray-100 hover:border-gray-300 text-slate-700'
-                  }`}
-                >
-                  <img 
-                    src={u.avatar} 
-                    alt={u.name} 
-                    className="h-10 w-10 rounded-full mx-auto mb-2 object-cover border border-gray-50"
-                    referrerPolicy="no-referrer"
+            {switchError && (
+              <div className="p-3 bg-rose-50 border border-rose-150 rounded-lg flex items-center gap-2 text-xs text-rose-800 font-medium mb-4">
+                <AlertCircle className="h-4 w-4 text-rose-500 flex-shrink-0" />
+                <span>{switchError}</span>
+              </div>
+            )}
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              if (!switchEmailInput.trim() || !switchPasswordInput) {
+                setSwitchError('Please enter both email and password.');
+                return;
+              }
+              const foundTarget = users.find(u => u.email.toLowerCase() === switchEmailInput.trim().toLowerCase());
+              if (!foundTarget) {
+                setSwitchError('No user account found with this email.');
+                return;
+              }
+              const expectedPassword = (foundTarget as any).password || 'hunter2password';
+              if (switchPasswordInput !== expectedPassword) {
+                setSwitchError('Invalid credentials. Password verification failed.');
+                return;
+              }
+
+              // Successful verification!
+              onSwitchUser(foundTarget.id);
+              addLog(`[IAM Auth] Switched session after verifying Cognito credentials for: "${foundTarget.name}".`);
+              setSwitchEmailInput('');
+              setSwitchPasswordInput('');
+              setSwitchError('');
+              alert(`Successfully authenticated and switched active session to ${foundTarget.name}!`);
+            }} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Target Account Email</label>
+                  <input 
+                    type="email" 
+                    required
+                    placeholder="e.g. robert.j@awsvehicles.com"
+                    value={switchEmailInput}
+                    onChange={e => {
+                      setSwitchEmailInput(e.target.value);
+                      setSwitchError('');
+                    }}
+                    className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-white font-sans text-xs"
                   />
-                  <div className="truncate font-semibold">{u.name}</div>
-                  <div className="text-[9px] font-mono uppercase text-gray-400 mt-0.5">{u.role}</div>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Cognito Password</label>
+                  <input 
+                    type="password" 
+                    required
+                    placeholder="••••••••••••"
+                    value={switchPasswordInput}
+                    onChange={e => {
+                      setSwitchPasswordInput(e.target.value);
+                      setSwitchError('');
+                    }}
+                    className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-white font-sans text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-1.5">
+                <button
+                  type="submit"
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-2.5 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5"
+                >
+                  <ShieldCheck className="h-4 w-4 text-[#FF9900]" />
+                  Authenticate & Switch Account
                 </button>
-              ))}
-            </div>
+              </div>
+            </form>
           </div>
         </div>
 
@@ -829,114 +875,6 @@ export default function UserProfile({
         </div>
       )}
 
-      {/* Switch Account Credential Verification Modal */}
-      {switchingTargetUser && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
-          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-150 shadow-2xl overflow-hidden">
-            <div className="bg-slate-950 p-5 text-white flex items-center justify-between border-b border-slate-800">
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-[#FF9900]" />
-                <span className="font-extrabold text-xs uppercase tracking-wider font-mono">Cognito Credentials Check</span>
-              </div>
-              <button 
-                onClick={() => setSwitchingTargetUser(null)}
-                className="text-slate-400 hover:text-white cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="flex items-center gap-3.5 bg-slate-50 p-3.5 rounded-xl border border-slate-150">
-                <img 
-                  src={switchingTargetUser.avatar} 
-                  alt={switchingTargetUser.name} 
-                  className="h-11 w-11 rounded-full object-cover border border-slate-200"
-                  referrerPolicy="no-referrer"
-                />
-                <div>
-                  <div className="font-extrabold text-slate-950 text-xs">{switchingTargetUser.name}</div>
-                  <div className="text-[10px] text-[#FF9900] font-mono uppercase tracking-wider mt-0.5">{switchingTargetUser.role} Profile</div>
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-500 leading-relaxed">
-                For security reasons, switching accounts requires valid Cognito identity credentials. Please enter the email and password for this profile.
-              </p>
-
-              {switchError && (
-                <div className="p-3 bg-rose-50 border border-rose-150 rounded-lg flex items-center gap-2 text-[11px] text-rose-800 font-medium">
-                  <AlertCircle className="h-4 w-4 text-rose-500 flex-shrink-0" />
-                  <span>{switchError}</span>
-                </div>
-              )}
-
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                if (!switchEmailInput.trim() || !switchPasswordInput) {
-                  setSwitchError('Please enter both email and password.');
-                  return;
-                }
-                if (switchEmailInput.trim().toLowerCase() !== switchingTargetUser.email.toLowerCase()) {
-                  setSwitchError('The email entered does not match the requested profile.');
-                  return;
-                }
-                const expectedPassword = (switchingTargetUser as any).password || 'hunter2password';
-                if (switchPasswordInput !== expectedPassword) {
-                  setSwitchError('Invalid credentials. Password verification failed.');
-                  return;
-                }
-
-                // Successful verification!
-                onSwitchUser(switchingTargetUser.id);
-                addLog(`[IAM Auth] Switched session after verifying Cognito credentials for: "${switchingTargetUser.name}".`);
-                setSwitchingTargetUser(null);
-                alert(`Successfully authenticated as ${switchingTargetUser.name}!`);
-              }} className="space-y-3.5 text-xs">
-                <div>
-                  <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Cognito Email</label>
-                  <input 
-                    type="email" 
-                    required
-                    placeholder="Enter email for this profile"
-                    value={switchEmailInput}
-                    onChange={e => setSwitchEmailInput(e.target.value)}
-                    className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-slate-50 font-sans"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Password</label>
-                  <input 
-                    type="password" 
-                    required
-                    placeholder="••••••••••••"
-                    value={switchPasswordInput}
-                    onChange={e => setSwitchPasswordInput(e.target.value)}
-                    className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-slate-50 font-sans"
-                  />
-                </div>
-
-                <div className="pt-2 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSwitchingTargetUser(null)}
-                    className="flex-1 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-2.5 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-2.5 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5"
-                  >
-                    <ShieldCheck className="h-4 w-4 text-[#FF9900]" />
-                    Verify & Sign In
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
