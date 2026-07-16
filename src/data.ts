@@ -1,6 +1,31 @@
 import { Vehicle, Review, User } from './types';
 
-export const INITIAL_USERS: User[] = [];
+export const INITIAL_USERS: User[] = [
+  {
+    id: 'usr_buyer',
+    name: 'Siddharth Samarla',
+    email: 'siddusamarla14@gmail.com',
+    role: 'buyer',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+    balance: 150000
+  },
+  {
+    id: 'usr_seller_1',
+    name: 'Robert Jenkins',
+    email: 'robert.j@awsvehicles.com',
+    role: 'seller',
+    avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150',
+    balance: 45000
+  },
+  {
+    id: 'usr_seller_2',
+    name: 'Sarah Connor',
+    email: 'sconnor@motors.com',
+    role: 'seller',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150',
+    balance: 89000
+  }
+];
 
 export const INITIAL_VEHICLES: Vehicle[] = [
   {
@@ -104,7 +129,7 @@ export const INITIAL_VEHICLES: Vehicle[] = [
     condition: 'New',
     vehicleType: 'suv',
     images: [
-      'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&q=80&w=800'
+      'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&q=80&w=800'
     ],
     description: 'Excellent hybrid SUV, nearly brand new condition. Incredible fuel efficiency (41 MPG city). Features Toyota Safety Sense 2.0 (Lane Departure Alert, Pre-collision system, Adaptive Cruise), Apple CarPlay & Android Auto. Owner is upgrading to a larger truck.',
     location: 'Boston, MA',
@@ -224,6 +249,424 @@ export const INITIAL_VEHICLES: Vehicle[] = [
     sellerPhone: '+1 (303) 555-0189',
     status: 'available',
     createdAt: '2026-07-14T03:15:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_11',
+    make: 'Audi',
+    model: 'e-tron GT Prestige',
+    year: 2023,
+    price: 84900,
+    mileage: 6200,
+    condition: 'Excellent',
+    vehicleType: 'car',
+    images: [
+      'https://images.unsplash.com/photo-1617531653332-bd46c24f2068?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Breathtaking Audi e-tron GT Prestige. Dual electric motor producing 522 HP with boost mode. Stunning tactical green exterior with black leather interior. Bang & Olufsen 3D Premium Sound System, head-up display, adaptive air suspension, and clean title. Level 2 home charger included.',
+    location: 'Miami, FL',
+    sellerId: 'usr_seller_1',
+    sellerName: 'Robert Jenkins',
+    sellerEmail: 'robert.j@awsvehicles.com',
+    sellerPhone: '+1 (206) 555-0142',
+    status: 'available',
+    createdAt: '2026-07-15T09:40:00Z',
+    featured: true
+  },
+  {
+    id: 'veh_12',
+    make: 'Mazda',
+    model: 'MX-5 Miata Club',
+    year: 2021,
+    price: 26800,
+    mileage: 14500,
+    condition: 'Excellent',
+    vehicleType: 'car',
+    images: [
+      'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Soul Red Crystal Metallic MX-5 Miata Club. 6-speed manual transmission, Bilstein dampers, Brembo/BBS Recaro package, heated seats, Apple CarPlay. Pristine condition, driven only in summer. Completely stock, meticulously detailed.',
+    location: 'Portland, OR',
+    sellerId: 'usr_seller_2',
+    sellerName: 'Sarah Connor',
+    sellerEmail: 'sconnor@motors.com',
+    sellerPhone: '+1 (303) 555-0189',
+    status: 'available',
+    createdAt: '2026-07-15T11:20:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_13',
+    make: 'Subaru',
+    model: 'Outback Wilderness',
+    year: 2022,
+    price: 33500,
+    mileage: 22100,
+    condition: 'Good',
+    vehicleType: 'suv',
+    images: [
+      'https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Geyser Blue Subaru Outback Wilderness. Raised ground clearance (9.5 inches), Yokohama GEOLANDAR all-terrain tires, dual-function X-MODE, startex water-repellent upholstery. Subaru EyeSight Driver Assist. Perfect for PNW exploring and winter snow trips.',
+    location: 'Denver, CO',
+    sellerId: 'usr_seller_1',
+    sellerName: 'Robert Jenkins',
+    sellerEmail: 'robert.j@awsvehicles.com',
+    sellerPhone: '+1 (206) 555-0142',
+    status: 'available',
+    createdAt: '2026-07-14T14:50:00Z',
+    featured: true
+  },
+  {
+    id: 'veh_14',
+    make: 'Ford',
+    model: 'Mustang Shelby GT500',
+    year: 2020,
+    price: 76900,
+    mileage: 8200,
+    condition: 'Excellent',
+    vehicleType: 'car',
+    images: [
+      'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Menacing Shadow Black Shelby GT500 with painted over-the-top stripes. Supercharged 5.2L V8 producing 760 HP. Tremec 7-speed dual-clutch transmission. Recaro leather seats, Technology Package, carbon fiber interior accents. Sounds incredible, runs flawlessly, clear protective film on front.',
+    location: 'Austin, TX',
+    sellerId: 'usr_seller_2',
+    sellerName: 'Sarah Connor',
+    sellerEmail: 'sconnor@motors.com',
+    sellerPhone: '+1 (303) 555-0189',
+    status: 'available',
+    createdAt: '2026-07-15T15:10:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_15',
+    make: 'Triumph',
+    model: 'Bonneville T120 Black',
+    year: 2021,
+    price: 10400,
+    mileage: 3400,
+    condition: 'Excellent',
+    vehicleType: 'motorcycle',
+    images: [
+      'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Stunning Triumph Bonneville T120 Black. 1200cc high-torque twin engine. Matte black finish, custom brown leather seat, vintage bar-end mirrors. Always stored in heated garage, ceramic coated. Includes original exhaust and parts.',
+    location: 'Seattle, WA',
+    sellerId: 'usr_seller_2',
+    sellerName: 'Sarah Connor',
+    sellerEmail: 'sconnor@motors.com',
+    sellerPhone: '+1 (303) 555-0189',
+    status: 'available',
+    createdAt: '2026-07-15T16:45:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_16',
+    make: 'Mercedes-Benz',
+    model: 'AMG G 63',
+    year: 2021,
+    price: 149500,
+    mileage: 12800,
+    condition: 'Excellent',
+    vehicleType: 'suv',
+    images: [
+      'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Iconic Mercedes-AMG G 63 in Obsidian Black Metallic over Classic Red/Black Nappa leather. Handcrafted 4.0L V8 Biturbo producing 577 HP. Equipped with the Exclusive Interior Plus package, AMG Night Package, 22-inch AMG cross-spoke wheels, and silver brake calipers. Pristine shape, serviced strictly at Mercedes-Benz authorized dealerships.',
+    location: 'Los Angeles, CA',
+    sellerId: 'usr_seller_1',
+    sellerName: 'Robert Jenkins',
+    sellerEmail: 'robert.j@awsvehicles.com',
+    sellerPhone: '+1 (206) 555-0142',
+    status: 'available',
+    createdAt: '2026-07-15T18:30:00Z',
+    featured: true
+  },
+  {
+    id: 'veh_17',
+    make: 'Hyundai',
+    model: 'IONIQ 5 Limited',
+    year: 2022,
+    price: 38500,
+    mileage: 14200,
+    condition: 'Excellent',
+    vehicleType: 'car',
+    images: [
+      'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Stunning IONIQ 5 Limited AWD in Shooting Star Matte Gray. This award-winning EV features 320 HP, 74-kWh battery pack, ultra-fast 800V charging (10% to 80% in 18 minutes), vision sunroof with power sunshade, head-up display with AR, and Remote Smart Parking Assist. Exceptionally quiet ride, clean title, single owner.',
+    location: 'San Jose, CA',
+    sellerId: 'usr_seller_1',
+    sellerName: 'Robert Jenkins',
+    sellerEmail: 'robert.j@awsvehicles.com',
+    sellerPhone: '+1 (206) 555-0142',
+    status: 'available',
+    createdAt: '2026-07-15T20:15:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_18',
+    make: 'RAM',
+    model: '1500 TRX',
+    year: 2022,
+    price: 79900,
+    mileage: 18500,
+    condition: 'Excellent',
+    vehicleType: 'truck',
+    images: [
+      'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'The ultimate performance pickup. RAM 1500 TRX powered by a Supercharged 6.2L HEMI V8 engine delivering 702 HP. Bright White Clearcoat with TRX Level 2 Equipment Group. Bilstein Black Hawk e2 adaptive shocks, dual-pane panoramic sunroof, Harman Kardon 19-speaker premium sound, and head-up display. Never taken off-road, strictly garage-kept.',
+    location: 'Houston, TX',
+    sellerId: 'usr_seller_2',
+    sellerName: 'Sarah Connor',
+    sellerEmail: 'sconnor@motors.com',
+    sellerPhone: '+1 (303) 555-0189',
+    status: 'available',
+    createdAt: '2026-07-16T01:10:00Z',
+    featured: true
+  },
+  {
+    id: 'veh_19',
+    make: 'Harley-Davidson',
+    model: 'Iron 883',
+    year: 2020,
+    price: 7800,
+    mileage: 2600,
+    condition: 'Excellent',
+    vehicleType: 'motorcycle',
+    images: [
+      'https://images.unsplash.com/photo-1562591176-f4f6e913a891?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Grit-finished Harley-Davidson Sportster Iron 883 in Black Denim. Air-cooled Evolution V-Twin 883cc engine. Features blacked-out detailing, slammed suspension for a comfortable cruise, solo seat, and custom Vance & Hines shortshots exhaust that sounds deep and aggressive. Meticulously maintained, perfect entry or urban cruiser.',
+    location: 'Phoenix, AZ',
+    sellerId: 'usr_seller_2',
+    sellerName: 'Sarah Connor',
+    sellerEmail: 'sconnor@motors.com',
+    sellerPhone: '+1 (303) 555-0189',
+    status: 'available',
+    createdAt: '2026-07-15T22:40:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_20',
+    make: 'Tesla',
+    model: 'Model S Plaid',
+    year: 2023,
+    price: 89900,
+    mileage: 4900,
+    condition: 'New',
+    vehicleType: 'car',
+    images: [
+      'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Incredible Tesla Model S Plaid in Solid Black with Carbon Fiber trim and yoke steering wheel. Tri-Motor AWD system pumping out a staggering 1,020 HP (0-60 MPH in 1.99s). Features standard autopilot, sub-zero weather package, 21-inch Arachnid wheels, and 17-inch cinematic center display. Absolutely immaculate condition inside and out.',
+    location: 'San Francisco, CA',
+    sellerId: 'usr_seller_1',
+    sellerName: 'Robert Jenkins',
+    sellerEmail: 'robert.j@awsvehicles.com',
+    sellerPhone: '+1 (206) 555-0142',
+    status: 'available',
+    createdAt: '2026-07-16T02:05:00Z',
+    featured: true
+  },
+  {
+    id: 'veh_21',
+    make: 'Land Rover',
+    model: 'Defender 110 V8',
+    year: 2023,
+    price: 94000,
+    mileage: 7200,
+    condition: 'Excellent',
+    vehicleType: 'suv',
+    images: [
+      'https://images.unsplash.com/photo-1551524559-8af4e6624178?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Mighty Land Rover Defender 110 V8 in Carpathian Gray with Satin Protective Film. 518 HP Supercharged V8 engine. Premium Ebony Windsor leather with Miko Suedecloth interior. Active electronic differential, configurable terrain response, quad outboard exhausts, and 22-inch satin dark gray wheels. True rugged luxury.',
+    location: 'Boston, MA',
+    sellerId: 'usr_seller_2',
+    sellerName: 'Sarah Connor',
+    sellerEmail: 'sconnor@motors.com',
+    sellerPhone: '+1 (303) 555-0189',
+    status: 'available',
+    createdAt: '2026-07-16T03:00:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_22',
+    make: 'GMC',
+    model: 'Hummer EV Edition 1',
+    year: 2022,
+    price: 99500,
+    mileage: 3100,
+    condition: 'Excellent',
+    vehicleType: 'truck',
+    images: [
+      'https://images.unsplash.com/photo-1609521263047-f8f205293f24?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Jaw-dropping GMC Hummer EV Edition 1 in Interstellar White. Features 3 motors delivering 1,000 HP, revolutionary CrabWalk mode, adaptive air suspension with Extract Mode, Watts to Freedom acceleration mode, and dynamic Infinity Roof with modular transparent Sky Panels. Ultra-rare collector truck ready for delivery.',
+    location: 'Denver, CO',
+    sellerId: 'usr_seller_1',
+    sellerName: 'Robert Jenkins',
+    sellerEmail: 'robert.j@awsvehicles.com',
+    sellerPhone: '+1 (206) 555-0142',
+    status: 'available',
+    createdAt: '2026-07-16T02:30:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_23',
+    make: 'Vespa',
+    model: 'Primavera 150',
+    year: 2021,
+    price: 4500,
+    mileage: 1100,
+    condition: 'Excellent',
+    vehicleType: 'motorcycle',
+    images: [
+      'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Charming Vespa Primavera 150 in Mint Green. Single-cylinder 4-stroke 150cc engine with electronic injection. Excellent fuel mileage, lightweight, retro styling with modern LED lighting and front disc brake with ABS. Perfect city commuter or beach cruiser. Comes with a matching rear top box.',
+    location: 'Miami, FL',
+    sellerId: 'usr_seller_2',
+    sellerName: 'Sarah Connor',
+    sellerEmail: 'sconnor@motors.com',
+    sellerPhone: '+1 (303) 555-0189',
+    status: 'available',
+    createdAt: '2026-07-15T19:20:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_24',
+    make: 'Toyota',
+    model: 'Corolla LE',
+    year: 2018,
+    price: 14200,
+    mileage: 56400,
+    condition: 'Excellent',
+    vehicleType: 'car',
+    images: [
+      'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Extremely reliable Toyota Corolla LE in Classic Silver Metallic. Excellent fuel efficiency, clean interior, back-up camera, lane departure alert, and dynamic radar cruise control. Brand new tires installed last month. Perfect daily commuter with zero issues.',
+    location: 'Houston, TX',
+    sellerId: 'usr_seller_1',
+    sellerName: 'Robert Jenkins',
+    sellerEmail: 'robert.j@awsvehicles.com',
+    sellerPhone: '+1 (206) 555-0142',
+    status: 'available',
+    createdAt: '2026-07-16T03:10:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_25',
+    make: 'Honda',
+    model: 'Civic Sport',
+    year: 2019,
+    price: 17500,
+    mileage: 42100,
+    condition: 'Excellent',
+    vehicleType: 'car',
+    images: [
+      'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Sporty Honda Civic Sport in Aegean Blue Metallic. 2.0L 4-cylinder engine, 18-inch alloy wheels, center-outlet dual exhaust, Apple CarPlay, Android Auto, and Honda Sensing suite. Fun to drive, highly fuel-efficient, single-owner car with pristine dealer service record.',
+    location: 'Chicago, IL',
+    sellerId: 'usr_seller_2',
+    sellerName: 'Sarah Connor',
+    sellerEmail: 'sconnor@motors.com',
+    sellerPhone: '+1 (303) 555-0189',
+    status: 'available',
+    createdAt: '2026-07-16T03:15:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_26',
+    make: 'Ford',
+    model: 'Escape SE',
+    year: 2018,
+    price: 12900,
+    mileage: 61800,
+    condition: 'Good',
+    vehicleType: 'suv',
+    images: [
+      'https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Versatile Ford Escape SE in Shadow Black with intelligent AWD. Powered by a 1.5L EcoBoost engine. Features heated front seats, dual-zone automatic climate control, SYNC 3 infotainment system with an 8-inch touchscreen, and satellite radio. Spacious cargo space and smooth highway ride.',
+    location: 'Denver, CO',
+    sellerId: 'usr_seller_1',
+    sellerName: 'Robert Jenkins',
+    sellerEmail: 'robert.j@awsvehicles.com',
+    sellerPhone: '+1 (206) 555-0142',
+    status: 'available',
+    createdAt: '2026-07-16T03:20:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_27',
+    make: 'Nissan',
+    model: 'Leaf SV',
+    year: 2019,
+    price: 11500,
+    mileage: 38200,
+    condition: 'Excellent',
+    vehicleType: 'car',
+    images: [
+      'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Eco-friendly Nissan Leaf SV Electric in Gun Metallic. 40 kWh battery with ~150 miles range, perfect for urban commuting. Nissan ProPILOT Assist, e-Pedal mode, heated seats/steering wheel, navigation, and quick-charge port. battery health is exceptional at 11/12 bars. Includes premium charger cable.',
+    location: 'San Jose, CA',
+    sellerId: 'usr_seller_1',
+    sellerName: 'Robert Jenkins',
+    sellerEmail: 'robert.j@awsvehicles.com',
+    sellerPhone: '+1 (206) 555-0142',
+    status: 'available',
+    createdAt: '2026-07-16T03:25:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_28',
+    make: 'Subaru',
+    model: 'Impreza Premium',
+    year: 2019,
+    price: 15800,
+    mileage: 49500,
+    condition: 'Excellent',
+    vehicleType: 'car',
+    images: [
+      'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'All-Weather Subaru Impreza Premium sedan in Crystal Black Silica with Symmetrical AWD. Subaru EyeSight driver assistance, heated cloth seats, power moonroof, alloy wheels, and seamless Apple CarPlay integration. Extremely safe, highly reliable, and ready for any season.',
+    location: 'Seattle, WA',
+    sellerId: 'usr_seller_2',
+    sellerName: 'Sarah Connor',
+    sellerEmail: 'sconnor@motors.com',
+    sellerPhone: '+1 (303) 555-0189',
+    status: 'available',
+    createdAt: '2026-07-16T03:30:00Z',
+    featured: false
+  },
+  {
+    id: 'veh_29',
+    make: 'Mazda',
+    model: '3 Touring',
+    year: 2018,
+    price: 13600,
+    mileage: 58100,
+    condition: 'Good',
+    vehicleType: 'car',
+    images: [
+      'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&q=80&w=800'
+    ],
+    description: 'Elegant Mazda 3 Touring sedan in Machine Gray Metallic. Luxurious leatherette seats, blind-spot monitoring, dual-zone auto climate control, keyless entry/start, and Bose premium 9-speaker system. Incredible driving dynamics and handling. Fully inspected, fresh oil change.',
+    location: 'Phoenix, AZ',
+    sellerId: 'usr_seller_2',
+    sellerName: 'Sarah Connor',
+    sellerEmail: 'sconnor@motors.com',
+    sellerPhone: '+1 (303) 555-0189',
+    status: 'available',
+    createdAt: '2026-07-16T03:35:00Z',
     featured: false
   }
 ];
