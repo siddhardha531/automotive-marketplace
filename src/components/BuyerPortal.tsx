@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Search, SlidersHorizontal, MapPin, Calendar, Compass, Star, 
-  ShieldCheck, Phone, Mail, DollarSign, X, Check, ArrowRight, User
+  ShieldCheck, Phone, Mail, DollarSign, X, Check, ArrowRight, User,
+  CreditCard, Lock, Building, CheckCircle2, Wallet, AlertCircle
 } from 'lucide-react';
 import { Vehicle, VehicleType, VehicleCondition, Review, User as UserType } from '../types';
 
@@ -12,6 +13,7 @@ interface BuyerPortalProps {
   onInitiateEscrow: (vehicleId: string, amount: number, sellerId: string, sellerName: string) => void;
   onAddReview: (targetUserId: string, rating: number, comment: string) => void;
   addLog: (msg: string) => void;
+  onUpdateBalance?: (userId: string, amount: number) => void;
 }
 
 export default function BuyerPortal({
@@ -20,11 +22,25 @@ export default function BuyerPortal({
   currentUser,
   onInitiateEscrow,
   onAddReview,
-  addLog
+  addLog,
+  onUpdateBalance
 }: BuyerPortalProps) {
   // Navigation & Details selection
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   
+  // Checkout & Payment states
+  const [checkoutVehicle, setCheckoutVehicle] = useState<Vehicle | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
+  const [cardNumber, setCardNumber] = useState<string>('');
+  const [cardName, setCardName] = useState<string>('');
+  const [cardExpiry, setCardExpiry] = useState<string>('');
+  const [cardCvv, setCardCvv] = useState<string>('');
+  const [cardZip, setCardZip] = useState<string>('');
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+  const [paymentStep, setPaymentStep] = useState<string>('');
+  const [paymentSuccess, setPaymentSuccess] = useState<boolean>(false);
+  const [paymentError, setPaymentError] = useState<string>('');
+
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<VehicleType | 'all'>('all');
@@ -134,16 +150,17 @@ export default function BuyerPortal({
 
   // Handle Checkout Click
   const handlePurchase = (vehicle: Vehicle) => {
-    const balance = currentUser?.balance ?? 0;
-    if (balance < vehicle.price) {
-      alert(`Insufficient balance. Your current simulated wallet balance is $${balance.toLocaleString()}. You need $${vehicle.price.toLocaleString()} to purchase this vehicle.`);
-      return;
-    }
-
-    if (confirm(`Do you want to initiate a secure Escrow checkout of $${vehicle.price.toLocaleString()} for this ${vehicle.year} ${vehicle.make} ${vehicle.model}? Your funds will be locked securely until you verify vehicle receipt.`)) {
-      onInitiateEscrow(vehicle.id, vehicle.price, vehicle.sellerId, vehicle.sellerName);
-      setSelectedVehicle(null);
-    }
+    setCheckoutVehicle(vehicle);
+    setPaymentMethod('card'); // default to card
+    setCardNumber('');
+    setCardName(currentUser?.name || '');
+    setCardExpiry('');
+    setCardCvv('');
+    setCardZip('');
+    setIsProcessingPayment(false);
+    setPaymentStep('');
+    setPaymentSuccess(false);
+    setPaymentError('');
   };
 
   // Filter reviews for selected seller
@@ -170,6 +187,95 @@ export default function BuyerPortal({
       setSubmittingReview(false);
       alert('Review submitted successfully!');
     }, 1000);
+  };
+
+  const cardType = useMemo(() => {
+    const cleanNum = cardNumber.replace(/\s/g, '');
+    if (cleanNum.startsWith('4')) return 'Visa';
+    if (cleanNum.startsWith('5')) return 'MasterCard';
+    return 'CreditCard';
+  }, [cardNumber]);
+
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, '');
+    if (val.length > 16) val = val.slice(0, 16);
+    const formatted = val.match(/.{1,4}/g)?.join(' ') || val;
+    setCardNumber(formatted);
+  };
+
+  const handleCardExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, '');
+    if (val.length > 4) val = val.slice(0, 4);
+    if (val.length >= 2) {
+      val = val.slice(0, 2) + '/' + val.slice(2);
+    }
+    setCardExpiry(val);
+  };
+
+  const handleCardCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setCardCvv(val);
+  };
+
+  const handlePlaceOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!checkoutVehicle) return;
+
+    if (paymentMethod === 'card') {
+      const cleanCard = cardNumber.replace(/\s/g, '');
+      if (cleanCard.length < 15) {
+        setPaymentError('Invalid Card Number. Must be at least 15 digits.');
+        return;
+      }
+      if (!cardExpiry.includes('/') || cardExpiry.length < 5) {
+        setPaymentError('Invalid Expiry Date. Use MM/YY format.');
+        return;
+      }
+      if (cardCvv.length < 3) {
+        setPaymentError('Invalid CVV. Must be at least 3 digits.');
+        return;
+      }
+    } else {
+      if ((currentUser?.balance ?? 0) < checkoutVehicle.price) {
+        setPaymentError('Insufficient balance in AWS Escrow Wallet. Use Credit Card checkout to process immediately.');
+        return;
+      }
+    }
+
+    setPaymentError('');
+    setIsProcessingPayment(true);
+    setPaymentStep('Resolving secure Stripe merchant credentials...');
+
+    setTimeout(() => {
+      setPaymentStep('Validating card cryptographic signatures with issuer bank...');
+      
+      setTimeout(() => {
+        setPaymentStep('Initiating AWS Multi-AZ escrow custody contract...');
+        
+        setTimeout(() => {
+          setPaymentStep('Depositing funds securely inside escrow ledger...');
+          
+          setTimeout(() => {
+            setIsProcessingPayment(false);
+            setPaymentSuccess(true);
+            
+            if (paymentMethod === 'card' && onUpdateBalance) {
+              onUpdateBalance(currentUser.id, checkoutVehicle.price);
+              addLog(`[Financial Gateway] Stripe transaction approved. Credited $${checkoutVehicle.price.toLocaleString()} directly into user balance to fund escrow.`);
+            }
+            
+            onInitiateEscrow(
+              checkoutVehicle.id, 
+              checkoutVehicle.price, 
+              checkoutVehicle.sellerId, 
+              checkoutVehicle.sellerName
+            );
+            
+            addLog(`[Financial Gateway] Successfully completed $${checkoutVehicle.price.toLocaleString()} Escrow placement via ${paymentMethod === 'card' ? 'Stripe Gateway' : 'Ledger Wallet'}.`);
+          }, 800);
+        }, 800);
+      }, 800);
+    }, 800);
   };
 
   const formatPrice = (p: number) => {
@@ -919,6 +1025,381 @@ export default function BuyerPortal({
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Checkout Modal */}
+      {checkoutVehicle && (
+        <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 backdrop-blur-md font-sans">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col md:flex-row h-auto md:max-h-[640px] animate-scale-up">
+            
+            {/* Left Column: Order Summary & Interactive Card Graphic */}
+            <div className="md:w-5/12 bg-slate-50 p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-150 overflow-y-auto">
+              <div className="space-y-6">
+                <div>
+                  <h4 className="text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">Secure Escrow Checkout</h4>
+                  <h3 className="font-extrabold text-lg text-slate-900 mt-1">Order Summary</h3>
+                </div>
+
+                {/* Vehicle Micro-Card */}
+                <div className="p-4 bg-white rounded-xl border border-slate-200/60 shadow-xs space-y-3">
+                  <div className="aspect-video w-full rounded-lg overflow-hidden border border-slate-100">
+                    <img 
+                      src={checkoutVehicle.image} 
+                      alt={`${checkoutVehicle.year} ${checkoutVehicle.make} ${checkoutVehicle.model}`}
+                      className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-slate-900 text-sm">{checkoutVehicle.year} {checkoutVehicle.make} {checkoutVehicle.model}</h5>
+                    <div className="flex gap-2 text-[10px] text-slate-500 font-mono mt-1">
+                      <span className="uppercase">{checkoutVehicle.condition}</span>
+                      <span>•</span>
+                      <span>{checkoutVehicle.mileage.toLocaleString()} mi</span>
+                    </div>
+                  </div>
+                  <div className="border-t border-slate-100 pt-3 flex justify-between items-center text-xs">
+                    <span className="text-slate-500">Escrow Value</span>
+                    <span className="font-mono font-black text-slate-900">{formatPrice(checkoutVehicle.price)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500">AWS Processing Fee</span>
+                    <span className="font-mono text-emerald-600 font-bold">FREE ($0)</span>
+                  </div>
+                  <div className="border-t border-slate-150 pt-3 flex justify-between items-center text-sm font-bold">
+                    <span className="text-slate-800">Total Escrow Amount</span>
+                    <span className="font-mono font-black text-slate-950 text-base">{formatPrice(checkoutVehicle.price)}</span>
+                  </div>
+                </div>
+
+                {/* Interactive Credit Card Graphic */}
+                {paymentMethod === 'card' && (
+                  <div className="space-y-2">
+                    <span className="block text-[10px] text-slate-400 font-mono uppercase tracking-widest font-bold">Stripe Sandbox Card Preview</span>
+                    <div className={`aspect-[1.586/1] w-full rounded-2xl p-5 text-white flex flex-col justify-between relative overflow-hidden shadow-lg transition-all duration-500 ${
+                      cardType === 'Visa' ? 'bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-950' :
+                      cardType === 'MasterCard' ? 'bg-gradient-to-br from-rose-700 via-amber-800 to-stone-900' :
+                      'bg-gradient-to-br from-slate-700 via-slate-800 to-slate-950'
+                    }`}>
+                      {/* Grid overlay */}
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_50%)]" />
+                      
+                      {/* Card Header */}
+                      <div className="flex justify-between items-start z-10">
+                        <div className="flex items-center gap-1.5 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
+                          <Lock className="h-3 w-3 text-emerald-400" />
+                          <span className="text-[8px] font-mono tracking-widest text-emerald-400 uppercase font-black">Secure</span>
+                        </div>
+                        <div className="font-bold text-xs font-mono tracking-widest text-white/90">
+                          {cardType === 'Visa' ? 'VISA' : cardType === 'MasterCard' ? 'MASTERCARD' : 'STRIPE'}
+                        </div>
+                      </div>
+
+                      {/* Chip & Watermark */}
+                      <div className="flex justify-between items-center z-10 mt-2">
+                        {/* Brass Chip Graphic */}
+                        <div className="h-8 w-10 bg-gradient-to-br from-yellow-200 via-yellow-400 to-yellow-600 rounded-md border border-yellow-100 shadow-inner overflow-hidden relative">
+                          <div className="absolute inset-x-0 top-1/2 h-[1px] bg-yellow-700/30" />
+                          <div className="absolute inset-y-0 left-1/2 w-[1px] bg-yellow-700/30" />
+                          <div className="absolute inset-2 border border-yellow-700/10 rounded-sm" />
+                        </div>
+                        {/* AWS Holographic security logo */}
+                        <div className="opacity-20 flex items-center gap-1">
+                          <ShieldCheck className="h-7 w-7 text-white" />
+                        </div>
+                      </div>
+
+                      {/* Card Number */}
+                      <div className="text-center font-mono text-base tracking-widest z-10 mt-3 font-semibold text-slate-100">
+                        {cardNumber || '•••• •••• •••• ••••'}
+                      </div>
+
+                      {/* Footer Details */}
+                      <div className="flex justify-between items-end z-10 mt-2 font-mono">
+                        <div className="truncate pr-4">
+                          <span className="block text-[7px] text-slate-400 uppercase font-bold">Cardholder Name</span>
+                          <span className="text-xs tracking-wide uppercase font-medium truncate block max-w-[150px]">{cardName || 'YOUR FULL NAME'}</span>
+                        </div>
+                        <div className="flex gap-4">
+                          <div>
+                            <span className="block text-[7px] text-slate-400 uppercase font-bold">Expires</span>
+                            <span className="text-xs font-medium block">{cardExpiry || 'MM/YY'}</span>
+                          </div>
+                          <div>
+                            <span className="block text-[7px] text-slate-400 uppercase font-bold">CVV</span>
+                            <span className="text-xs font-medium block">{cardCvv || '•••'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Secure Lock Badge */}
+              <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 font-mono flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5 text-[#FF9900]" />
+                <span>AWS-STK-LEDGER secured end-to-end.</span>
+              </div>
+            </div>
+
+            {/* Right Column: Checkout tabs & Forms */}
+            <div className="flex-1 flex flex-col justify-between bg-white overflow-hidden">
+              
+              {/* Checkout Header */}
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/40">
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900">Payment Gateway</h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Select a secure sandbox method to deposit escrow funds</p>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setCheckoutVehicle(null)}
+                  className="text-slate-400 hover:text-slate-700 cursor-pointer p-1.5 rounded-full hover:bg-slate-200 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Main Content Area */}
+              <div className="p-6 flex-grow overflow-y-auto space-y-5">
+                {isProcessingPayment ? (
+                  /* Processing View */
+                  <div className="h-full flex flex-col items-center justify-center py-16 space-y-6">
+                    <div className="relative">
+                      {/* Glowing circular loading animation */}
+                      <div className="h-16 w-16 rounded-full border-4 border-slate-100 border-t-[#FF9900] animate-spin" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Lock className="h-6 w-6 text-slate-400 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="text-center space-y-2 max-w-xs">
+                      <h4 className="font-extrabold text-sm text-slate-900">Authorizing Secure Escrow Deposit</h4>
+                      <p className="text-[11px] text-slate-500 font-mono bg-slate-50 p-2.5 rounded-lg border border-slate-100 leading-relaxed">
+                        {paymentStep}
+                      </p>
+                    </div>
+                  </div>
+                ) : paymentSuccess ? (
+                  /* Success View */
+                  <div className="h-full flex flex-col items-center justify-center py-16 space-y-6">
+                    <div className="h-16 w-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center text-emerald-500 shadow-inner">
+                      <CheckCircle2 className="h-10 w-10 animate-bounce" />
+                    </div>
+                    <div className="text-center space-y-2">
+                      <h4 className="font-extrabold text-base text-slate-900">Escrow Account Funded!</h4>
+                      <p className="text-xs text-slate-500 max-w-xs leading-relaxed">
+                        Stripe payment captured successfully. A secure escrow contract has been provisioned on the AWS Ledger and funds are now locked.
+                      </p>
+                      <div className="pt-2">
+                        <span className="text-[9px] bg-slate-950 text-[#FF9900] font-mono px-2.5 py-1 rounded-full uppercase tracking-wider font-bold">
+                          STATUS: ESCROW_PENDING
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* Standard Input Forms */
+                  <div className="space-y-5">
+                    {/* Method Selector Tabs */}
+                    <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentMethod('card');
+                          setPaymentError('');
+                        }}
+                        className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          paymentMethod === 'card' 
+                            ? 'bg-white text-slate-900 shadow-xs' 
+                            : 'text-slate-500 hover:text-slate-950'
+                        }`}
+                      >
+                        <CreditCard className="h-4 w-4" />
+                        <span>Credit/Debit Card</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPaymentMethod('wallet');
+                          setPaymentError('');
+                        }}
+                        className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          paymentMethod === 'wallet' 
+                            ? 'bg-white text-slate-900 shadow-xs' 
+                            : 'text-slate-500 hover:text-slate-950'
+                        }`}
+                      >
+                        <Wallet className="h-4 w-4" />
+                        <span>AWS Ledger Wallet</span>
+                      </button>
+                    </div>
+
+                    {paymentError && (
+                      <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 text-xs text-rose-800">
+                        <AlertCircle className="h-4 w-4 text-rose-500 flex-shrink-0 mt-0.5" />
+                        <span className="font-semibold">{paymentError}</span>
+                      </div>
+                    )}
+
+                    {paymentMethod === 'card' ? (
+                      /* Credit Card Form fields */
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Cardholder Name</label>
+                          <input
+                            type="text"
+                            required
+                            value={cardName}
+                            onChange={e => setCardName(e.target.value)}
+                            className="w-full border border-slate-200 rounded-lg p-2.5 font-sans focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none"
+                            placeholder="John Doe"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Card Number (Auto-formatting)</label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              required
+                              value={cardNumber}
+                              onChange={handleCardNumberChange}
+                              className="w-full border border-slate-200 rounded-lg p-2.5 pl-10 font-mono tracking-widest focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none"
+                              placeholder="4111 2222 3333 4444"
+                            />
+                            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+                              <CreditCard className="h-4.5 w-4.5" />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="col-span-2">
+                            <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Expiration (MM/YY)</label>
+                            <input
+                              type="text"
+                              required
+                              value={cardExpiry}
+                              onChange={handleCardExpiryChange}
+                              maxLength={5}
+                              className="w-full border border-slate-200 rounded-lg p-2.5 font-mono text-center focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none"
+                              placeholder="MM/YY"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">CVV</label>
+                            <input
+                              type="password"
+                              required
+                              value={cardCvv}
+                              onChange={handleCardCvvChange}
+                              maxLength={4}
+                              className="w-full border border-slate-200 rounded-lg p-2.5 font-mono text-center focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none"
+                              placeholder="•••"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Billing Zip / Postal Code</label>
+                          <input
+                            type="text"
+                            required
+                            value={cardZip}
+                            onChange={e => setCardZip(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                            className="w-full border border-slate-200 rounded-lg p-2.5 font-sans focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none"
+                            placeholder="90210"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      /* Wallet Information fields */
+                      <div className="space-y-4">
+                        <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-3">
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-500">Current Ledger Balance</span>
+                            <span className="font-mono font-black text-slate-900">
+                              {formatPrice(currentUser?.balance ?? 0)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-500">Escrow Value of Vehicle</span>
+                            <span className="font-mono text-rose-600 font-bold">
+                              -{formatPrice(checkoutVehicle.price)}
+                            </span>
+                          </div>
+                          <div className="border-t border-slate-200 pt-3 flex justify-between items-center text-sm font-bold">
+                            <span className="text-slate-800">Remaining Wallet Balance</span>
+                            <span className={`font-mono font-black ${
+                              (currentUser?.balance ?? 0) >= checkoutVehicle.price 
+                                ? 'text-emerald-600' 
+                                : 'text-rose-600'
+                            }`}>
+                              {formatPrice((currentUser?.balance ?? 0) - checkoutVehicle.price)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {(currentUser?.balance ?? 0) >= checkoutVehicle.price ? (
+                          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800 leading-relaxed">
+                            <Check className="h-4.5 w-4.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-bold">Sufficient Wallet Funds</p>
+                              <p className="text-emerald-700 mt-0.5">Your sandbox ledger wallet is fully funded. No external credit card transactions are needed.</p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 leading-relaxed">
+                            <AlertCircle className="h-4.5 w-4.5 text-[#FF9900] flex-shrink-0 mt-0.5 animate-pulse" />
+                            <div>
+                              <p className="font-bold">Insufficient Sandbox Balance</p>
+                              <p className="text-amber-700 mt-0.5">Your balance is too low. Please switch to the "Credit/Debit Card" tab to process this order instantly and credit your sandbox account.</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons Footer */}
+              <div className="p-6 border-t border-slate-150 bg-slate-50 flex gap-3">
+                {paymentSuccess ? (
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutVehicle(null)}
+                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors text-center block shadow-md"
+                  >
+                    Close Secure Window
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled={isProcessingPayment}
+                      onClick={() => setCheckoutVehicle(null)}
+                      className="flex-1 bg-white hover:bg-slate-100 border border-slate-250 text-slate-700 font-bold py-3 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-all disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePlaceOrder}
+                      disabled={isProcessingPayment || (paymentMethod === 'wallet' && (currentUser?.balance ?? 0) < checkoutVehicle.price)}
+                      className="flex-[2] bg-[#FF9900] hover:bg-amber-600 text-slate-950 font-extrabold py-3 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:bg-gray-200 disabled:text-gray-400"
+                    >
+                      <ShieldCheck className="h-4.5 w-4.5 text-slate-950" />
+                      <span>Place Escrow Order</span>
+                    </button>
+                  </>
+                )}
+              </div>
+
+            </div>
           </div>
         </div>
       )}
