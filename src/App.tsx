@@ -72,7 +72,27 @@ export default function App() {
     // Load Vehicles
     const savedVehicles = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}vehicles`);
     if (savedVehicles) {
-      setVehicles(JSON.parse(savedVehicles));
+      try {
+        const parsed = JSON.parse(savedVehicles);
+        if (Array.isArray(parsed)) {
+          // Sync any new initial vehicles that are not in local storage yet
+          const savedIds = new Set(parsed.map((v: Vehicle) => v.id));
+          const newVehicles = INITIAL_VEHICLES.filter(v => !savedIds.has(v.id));
+          if (newVehicles.length > 0) {
+            const merged = [...parsed, ...newVehicles];
+            setVehicles(merged);
+            localStorage.setItem(`${LOCAL_STORAGE_PREFIX}vehicles`, JSON.stringify(merged));
+          } else {
+            setVehicles(parsed);
+          }
+        } else {
+          setVehicles(INITIAL_VEHICLES);
+          localStorage.setItem(`${LOCAL_STORAGE_PREFIX}vehicles`, JSON.stringify(INITIAL_VEHICLES));
+        }
+      } catch (e) {
+        setVehicles(INITIAL_VEHICLES);
+        localStorage.setItem(`${LOCAL_STORAGE_PREFIX}vehicles`, JSON.stringify(INITIAL_VEHICLES));
+      }
     } else {
       setVehicles(INITIAL_VEHICLES);
       localStorage.setItem(`${LOCAL_STORAGE_PREFIX}vehicles`, JSON.stringify(INITIAL_VEHICLES));
@@ -81,7 +101,17 @@ export default function App() {
     // Load Users
     const savedUsers = localStorage.getItem(`${LOCAL_STORAGE_PREFIX}users`);
     if (savedUsers) {
-      setUsers(JSON.parse(savedUsers));
+      try {
+        const parsed = JSON.parse(savedUsers);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setUsers(parsed);
+        } else {
+          setUsers(INITIAL_USERS);
+          localStorage.setItem(`${LOCAL_STORAGE_PREFIX}users`, JSON.stringify(INITIAL_USERS));
+        }
+      } catch (e) {
+        setUsers(INITIAL_USERS);
+      }
     } else {
       setUsers(INITIAL_USERS);
       localStorage.setItem(`${LOCAL_STORAGE_PREFIX}users`, JSON.stringify(INITIAL_USERS));
@@ -147,7 +177,7 @@ export default function App() {
   // Find current logged in user details
   const currentUser = useMemo(() => {
     if (!isLoggedIn) return GUEST_USER;
-    return users.find(u => u.id === currentUserId) || INITIAL_USERS[0];
+    return users.find(u => u.id === currentUserId) || INITIAL_USERS.find(u => u.id === currentUserId) || INITIAL_USERS[0] || GUEST_USER;
   }, [users, currentUserId, isLoggedIn]);
 
   // Dynamic user switching & Cognito Authentication
