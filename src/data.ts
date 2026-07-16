@@ -129,7 +129,7 @@ export const INITIAL_VEHICLES: Vehicle[] = [
     condition: 'New',
     vehicleType: 'suv',
     images: [
-      'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&q=80&w=800'
+      'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&q=80&w=800'
     ],
     description: 'Excellent hybrid SUV, nearly brand new condition. Incredible fuel efficiency (41 MPG city). Features Toyota Safety Sense 2.0 (Lane Departure Alert, Pre-collision system, Adaptive Cruise), Apple CarPlay & Android Auto. Owner is upgrading to a larger truck.',
     location: 'Boston, MA',
