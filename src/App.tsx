@@ -10,7 +10,10 @@ import SellerPortal from './components/SellerPortal';
 import AWSArchitectureConsole from './components/AWSArchitectureConsole';
 import AdminPanel from './components/AdminPanel';
 import UserProfile from './components/UserProfile';
-import { Cloud, ShieldCheck, Mail, Heart, ExternalLink } from 'lucide-react';
+import { 
+  Cloud, ShieldCheck, Mail, Heart, ExternalLink, Eye, EyeOff, 
+  Lock, Server, ShieldAlert, KeyRound, Fingerprint, ArrowLeft, AlertCircle, X
+} from 'lucide-react';
 
 const LOCAL_STORAGE_PREFIX = 'aws_vehicle_marketplace_';
 
@@ -41,6 +44,10 @@ export default function App() {
     return saved ? saved === 'true' : true;
   });
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [loginMfaStep, setLoginMfaStep] = useState<boolean>(false);
+  const [loginPendingUserId, setLoginPendingUserId] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [mfaInputCode, setMfaInputCode] = useState<string>('552901');
   
   // AWS Simulation States
   const [awsMetrics, setAwsMetrics] = useState<AWSMetrics>({
@@ -213,11 +220,19 @@ export default function App() {
     addAwsLog(`[IAM Auth] Switched active session and verified credentials for ID: ${id}`);
   };
 
+  const handleStartLogin = (id: string) => {
+    setLoginPendingUserId(id);
+    setLoginMfaStep(true);
+    addAwsLog(`[IAM Auth] MFA Challenge requested for Cognito login of User ID: ${id}. Verification code dispatched.`);
+  };
+
   const handleLogin = (id: string) => {
     setCurrentUserId(id);
     setIsLoggedIn(true);
     localStorage.setItem(`${LOCAL_STORAGE_PREFIX}is_logged_in`, 'true');
     setShowLoginModal(false);
+    setLoginMfaStep(false);
+    setLoginPendingUserId('');
     addAwsLog(`[IAM Auth] Successful handshake with AWS Cognito User Pool. Auth token generated for UID ${id}.`);
     
     const matchedUser = users.find(u => u.id === id) || INITIAL_USERS.find(u => u.id === id) || GUEST_USER;
@@ -563,6 +578,7 @@ export default function App() {
             onInitiateEscrow={handleInitiateEscrow}
             onAddReview={handleAddReview}
             addLog={addAwsLog}
+            onUpdateBalance={handleUpdateBalance}
           />
         )}
 
@@ -669,121 +685,252 @@ export default function App() {
 
       {/* AWS Cognito Secure Sign-In Modal */}
       {showLoginModal && (
-        <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 backdrop-blur-xs font-sans">
-          <div className="bg-white rounded-xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-slate-950/85 z-50 flex items-center justify-center p-4 backdrop-blur-md font-sans">
+          <div className="bg-white rounded-2xl border border-slate-200/85 shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col md:flex-row h-auto md:h-[600px] animate-scale-up">
             
-            {/* Header */}
-            <div className="bg-slate-900 text-white p-5 border-b border-slate-800 flex justify-between items-center">
-              <div className="flex items-center gap-2.5">
-                <div className="h-9 w-9 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-center">
-                  <Cloud className="h-5 w-5 text-[#FF9900]" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm tracking-tight text-white block">AWS Cognito User Pools</h3>
-                  <span className="text-[10px] text-gray-400 font-mono block -mt-1 uppercase tracking-wider font-semibold">Federated Secure Sign-In</span>
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowLoginModal(false)}
-                className="text-gray-400 hover:text-white cursor-pointer p-1 rounded-lg hover:bg-slate-800 transition-colors"
-                title="Cancel Sign-In"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 space-y-6 overflow-y-auto max-h-[80vh]">
-              <div>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Welcome to AWS AutoMarket. You are currently in Guest Explorer mode. To initiate escrow deposits, publish vehicle listings, or access developer consoles, please authenticate your session.
-                </p>
-              </div>
-
-              {/* Instant Persona Selection */}
-              <div className="space-y-3">
-                <span className="block text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">
-                  ⚡ 1-Click Persona Sign-In (Recommended)
-                </span>
-                <div className="grid grid-cols-2 gap-3">
-                  {users.map(u => (
-                    <button
-                      key={u.id}
-                      onClick={() => handleLogin(u.id)}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-[#FF9900] hover:bg-amber-500/5 text-left cursor-pointer transition-all hover:scale-[1.01]"
-                    >
-                      <img 
-                        src={u.avatar} 
-                        alt={u.name} 
-                        className="h-10 w-10 rounded-full object-cover border border-slate-100"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="truncate flex-1">
-                        <div className="font-bold text-xs text-slate-900 truncate leading-tight">{u.name}</div>
-                        <div className="text-[9px] font-mono uppercase text-gray-400 mt-0.5">{u.role}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="relative flex py-2 items-center">
-                <div className="flex-grow border-t border-slate-200"></div>
-                <span className="flex-shrink mx-4 text-[9px] text-slate-400 font-mono uppercase">Or Enter Manual Credentials</span>
-                <div className="flex-grow border-t border-slate-200"></div>
-              </div>
-
-              {/* Credentials Form */}
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                handleLogin('usr_buyer');
-              }} className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1.5">Cognito Username / Email</label>
-                  <input 
-                    type="email" 
-                    placeholder="siddusamarla14@gmail.com" 
-                    className="w-full border border-slate-200 rounded-lg p-2.5 font-sans"
-                    defaultValue="siddusamarla14@gmail.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <label className="block font-bold text-slate-600 uppercase tracking-wider">Password</label>
-                    <a href="#forgot" onClick={(e) => {
-                      e.preventDefault();
-                      alert('Cognito recovery dispatched! Check your mail inbox.');
-                    }} className="text-[10px] font-bold text-[#FF9900] hover:underline">Forgot password?</a>
+            {/* Left Column: Tech branding and AWS Console Status */}
+            <div className="md:w-5/12 bg-slate-950 text-slate-100 p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800">
+              <div className="space-y-6">
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 bg-[#FF9900]/10 rounded-xl flex items-center justify-center border border-[#FF9900]/30 shadow-inner">
+                    <Cloud className="h-6 w-6 text-[#FF9900] animate-pulse" />
                   </div>
-                  <input 
-                    type="password" 
-                    placeholder="••••••••••••" 
-                    className="w-full border border-slate-200 rounded-lg p-2.5 font-sans"
-                    defaultValue="hunter2password"
-                    required
-                  />
+                  <div>
+                    <span className="text-sm font-black tracking-tight text-white block">AWS Cognito</span>
+                    <span className="text-[9px] text-gray-400 font-mono block -mt-1 uppercase tracking-wider font-bold">Identity Provider</span>
+                  </div>
                 </div>
 
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5"
-                  >
-                    <ShieldCheck className="h-4 w-4 text-[#FF9900]" />
-                    Secure Sign-In
-                  </button>
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest font-mono">Security Status</h4>
+                  
+                  <div className="space-y-3 font-mono text-[10px]">
+                    <div className="flex items-center justify-between p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                        <span className="text-slate-300">Cognito User Pool</span>
+                      </div>
+                      <span className="text-[9px] text-emerald-400 font-bold uppercase">Active</span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                        <span className="text-slate-300">WAF Protection</span>
+                      </div>
+                      <span className="text-[9px] text-emerald-400 font-bold uppercase">Strict</span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-[#FF9900]" />
+                        <span className="text-slate-300">MFA Challenge</span>
+                      </div>
+                      <span className="text-[9px] text-[#FF9900] font-bold uppercase">Enforced</span>
+                    </div>
+                  </div>
                 </div>
-              </form>
+
+                <div className="p-4 bg-slate-900/50 rounded-xl border border-slate-800/80 space-y-2 text-xs">
+                  <div className="flex items-center gap-2 text-[#FF9900] font-bold text-[11px] font-mono">
+                    <ShieldCheck className="h-4 w-4" />
+                    <span>Zero-Trust Assurance</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    Identity validation utilizes cryptographically signed JSON Web Tokens (JWT) verified via Route 53 resolvers.
+                  </p>
+                </div>
+              </div>
+
+              <div className="hidden md:block pt-6 border-t border-slate-900 text-[9px] text-slate-500 font-mono space-y-1">
+                <p>AUTHORIZATION COMPLIANCE: SOC2 Type II</p>
+                <p>FEDERATION KEY: KMS-HSM-SEC-V2</p>
+              </div>
             </div>
 
-            {/* Footer info */}
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 text-[10px] text-slate-400 font-mono flex justify-between items-center">
-              <span>REGION: us-east-1</span>
-              <span>cognito-idp.us-east-1.amazonaws.com</span>
+            {/* Right Column: Dynamic Form Content */}
+            <div className="flex-1 flex flex-col justify-between bg-white overflow-hidden">
+              
+              {/* Header */}
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div>
+                  <h3 className="font-extrabold text-base tracking-tight text-slate-900">
+                    {loginMfaStep ? "Multi-Factor Authentication" : "Sign In to AWS AutoMarket"}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {loginMfaStep ? "Verify secure passcode via Cognito MFA" : "Access your secure vehicle wallet & escrow listings"}
+                  </p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setShowLoginModal(false);
+                    setLoginMfaStep(false);
+                    setLoginPendingUserId('');
+                  }}
+                  className="text-slate-400 hover:text-slate-700 cursor-pointer p-1.5 rounded-full hover:bg-slate-200 transition-colors"
+                  title="Close login portal"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Form / MFA Container */}
+              <div className="p-8 flex-grow overflow-y-auto space-y-6">
+                {!loginMfaStep ? (
+                  <>
+                    {/* Instant Persona Selection */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="block text-[10px] text-slate-400 font-mono uppercase tracking-wider font-bold">
+                          ⚡ 1-Click Persona Sign-In (Recommended)
+                        </span>
+                        <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded-full font-mono uppercase font-semibold">Fast Sandbox</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {users.map(u => (
+                          <button
+                            key={u.id}
+                            type="button"
+                            onClick={() => handleStartLogin(u.id)}
+                            className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200 hover:border-[#FF9900] hover:bg-amber-500/5 text-left cursor-pointer transition-all hover:scale-[1.01]"
+                          >
+                            <img 
+                              src={u.avatar} 
+                              alt={u.name} 
+                              className="h-8 w-8 rounded-full object-cover border border-slate-100"
+                              referrerPolicy="no-referrer"
+                            />
+                            <div className="truncate flex-1">
+                              <div className="font-bold text-[11px] text-slate-900 truncate leading-tight">{u.name}</div>
+                              <div className="text-[8px] font-mono uppercase text-gray-400 mt-0.5 font-semibold">{u.role}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="relative flex py-1 items-center">
+                      <div className="flex-grow border-t border-slate-150"></div>
+                      <span className="flex-shrink mx-4 text-[9px] text-slate-400 font-mono uppercase font-semibold">Or Enter Cognito Credentials</span>
+                      <div className="flex-grow border-t border-slate-150"></div>
+                    </div>
+
+                    {/* Manual Credentials Form */}
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      handleStartLogin('usr_buyer');
+                    }} className="space-y-4 text-xs">
+                      <div>
+                        <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1.5">Cognito Username / Email</label>
+                        <input 
+                          type="email" 
+                          placeholder="siddusamarla14@gmail.com" 
+                          className="w-full border border-slate-200 rounded-lg p-2.5 font-sans focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none"
+                          defaultValue="siddusamarla14@gmail.com"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <label className="block font-bold text-slate-600 uppercase tracking-wider">Password</label>
+                          <a href="#forgot" onClick={(e) => {
+                            e.preventDefault();
+                            alert('Cognito recovery dispatched! Check your mail inbox.');
+                          }} className="text-[10px] font-bold text-[#FF9900] hover:underline">Forgot password?</a>
+                        </div>
+                        <div className="relative">
+                          <input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="••••••••••••" 
+                            className="w-full border border-slate-200 rounded-lg p-2.5 pr-10 font-sans focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none"
+                            defaultValue="hunter2password"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="pt-2">
+                        <button
+                          type="submit"
+                          className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5"
+                        >
+                          <ShieldCheck className="h-4 w-4 text-[#FF9900]" />
+                          Secure Sign-In
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                ) : (
+                  /* MFA Verification Step */
+                  <div className="space-y-6">
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-xs text-amber-800">
+                      <Fingerprint className="h-5 w-5 text-[#FF9900] flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">MFA Handshake Required</p>
+                        <p className="mt-1 leading-relaxed text-amber-700">
+                          AWS Cognito User Pools requires verifying this login request. We've dispatched a secure passcode to your verified authentication device.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest font-bold">Verification Passcode</span>
+                        <div className="mt-3 flex justify-center gap-2">
+                          <input 
+                            type="text" 
+                            maxLength={6}
+                            value={mfaInputCode}
+                            onChange={e => setMfaInputCode(e.target.value)}
+                            className="w-full max-w-[200px] border-2 border-slate-300 rounded-xl p-3 text-center font-mono text-2xl font-bold tracking-widest focus:border-[#FF9900] focus:outline-none focus:ring-1 focus:ring-[#FF9900]"
+                            placeholder="000000"
+                            required
+                          />
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-mono mt-2">
+                          Enter simulated token: <span className="font-bold text-[#FF9900] hover:underline cursor-pointer" onClick={() => setMfaInputCode('552901')}>552901</span> (Click to autofill)
+                        </p>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        <button
+                          onClick={() => handleLogin(loginPendingUserId || 'usr_buyer')}
+                          className="w-full bg-[#FF9900] hover:bg-amber-600 text-slate-950 font-extrabold py-3.5 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5"
+                        >
+                          <KeyRound className="h-4 w-4 text-slate-950" />
+                          Verify & Access Console
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setLoginMfaStep(false);
+                            setLoginPendingUserId('');
+                          }}
+                          className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <ArrowLeft className="h-4 w-4" />
+                          Back to Log In
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Footer info */}
+              <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 text-[9px] text-slate-400 font-mono flex justify-between items-center">
+                <span>GATEWAY: cognito-idp.us-east-1.amazonaws.com</span>
+                <span>ZONE: us-east-1a</span>
+              </div>
             </div>
+
           </div>
         </div>
       )}
