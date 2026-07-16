@@ -75,15 +75,40 @@ export default function App() {
       try {
         const parsed = JSON.parse(savedVehicles);
         if (Array.isArray(parsed)) {
+          // Update details of existing initial vehicles if they have been updated in INITIAL_VEHICLES
+          const initialVehiclesMap = new Map(INITIAL_VEHICLES.map(v => [v.id, v]));
+          let updated = false;
+          const syncedList = parsed.map((v: Vehicle) => {
+            const initial = initialVehiclesMap.get(v.id);
+            if (initial) {
+              const imagesChanged = JSON.stringify(v.images) !== JSON.stringify(initial.images);
+              const priceChanged = v.price !== initial.price;
+              const modelChanged = v.model !== initial.model;
+              const makeChanged = v.make !== initial.make;
+              if (imagesChanged || priceChanged || modelChanged || makeChanged) {
+                updated = true;
+                return {
+                  ...v,
+                  images: initial.images,
+                  price: initial.price,
+                  model: initial.model,
+                  make: initial.make,
+                  description: initial.description
+                };
+              }
+            }
+            return v;
+          });
+
           // Sync any new initial vehicles that are not in local storage yet
-          const savedIds = new Set(parsed.map((v: Vehicle) => v.id));
+          const savedIds = new Set(syncedList.map((v: Vehicle) => v.id));
           const newVehicles = INITIAL_VEHICLES.filter(v => !savedIds.has(v.id));
-          if (newVehicles.length > 0) {
-            const merged = [...parsed, ...newVehicles];
+          if (newVehicles.length > 0 || updated) {
+            const merged = [...syncedList, ...newVehicles];
             setVehicles(merged);
             localStorage.setItem(`${LOCAL_STORAGE_PREFIX}vehicles`, JSON.stringify(merged));
           } else {
-            setVehicles(parsed);
+            setVehicles(syncedList);
           }
         } else {
           setVehicles(INITIAL_VEHICLES);
