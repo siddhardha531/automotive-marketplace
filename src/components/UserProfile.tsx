@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, Mail, Shield, ShieldCheck, Key, LogIn, Lock, 
-  Plus, Check, RefreshCw, Smartphone, Facebook, Chrome
+  Plus, Check, RefreshCw, Smartphone, Facebook, Chrome,
+  ShieldAlert, Eye, EyeOff, AlertCircle, X, Edit3, Save
 } from 'lucide-react';
 import { User as UserType } from '../types';
 
@@ -14,6 +15,8 @@ interface UserProfileProps {
   isLoggedIn?: boolean;
   onLogout?: () => void;
   onLogin?: (id: string) => void;
+  onRegister?: (newUser: UserType) => void;
+  onUpdateUser?: (updatedUser: UserType) => void;
 }
 
 export default function UserProfile({
@@ -24,14 +27,71 @@ export default function UserProfile({
   addLog,
   isLoggedIn = true,
   onLogout,
-  onLogin
+  onLogin,
+  onRegister,
+  onUpdateUser
 }: UserProfileProps) {
-  // Auth simulation states
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [regName, setRegName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regRole, setRegRole] = useState<'buyer' | 'seller'>('buyer');
-  const [regPassword, setRegPassword] = useState('');
+  // Redesigned profile page auth fields (completely empty by default)
+  const [profileAuthMode, setProfileAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [signInEmail, setSignInEmail] = useState('');
+  const [signInPassword, setSignInPassword] = useState('');
+  const [signUpName, setSignUpName] = useState('');
+  const [signUpEmail, setSignUpEmail] = useState('');
+  const [signUpPassword, setSignUpPassword] = useState('');
+  const [signUpPhone, setSignUpPhone] = useState('');
+  const [signUpRole, setSignUpRole] = useState<'buyer' | 'seller'>('buyer');
+  const [signUpBalance, setSignUpBalance] = useState<number>(100000);
+  const [showPassword, setShowPassword] = useState(false);
+  const [profileError, setProfileError] = useState('');
+
+  // Profile edit states
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editName, setEditName] = useState(currentUser.name);
+  const [editEmail, setEditEmail] = useState(currentUser.email);
+  const [editAvatar, setEditAvatar] = useState(currentUser.avatar);
+  const [editError, setEditError] = useState('');
+
+  // Sync profile editing inputs when current user changes
+  useEffect(() => {
+    setEditName(currentUser.name);
+    setEditEmail(currentUser.email);
+    setEditAvatar(currentUser.avatar);
+    setEditError('');
+  }, [currentUser]);
+
+  // Switch account verification modal states
+  const [switchingTargetUser, setSwitchingTargetUser] = useState<UserType | null>(null);
+  const [switchEmailInput, setSwitchEmailInput] = useState('');
+  const [switchPasswordInput, setSwitchPasswordInput] = useState('');
+  const [switchError, setSwitchError] = useState('');
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim() || !editEmail.trim()) {
+      setEditError('Name and Email fields are required.');
+      return;
+    }
+    const emailExists = users.some(u => u.id !== currentUser.id && u.email.toLowerCase() === editEmail.trim().toLowerCase());
+    if (emailExists) {
+      setEditError('This email is already registered by another account.');
+      return;
+    }
+
+    const updated = {
+      ...currentUser,
+      name: editName.trim(),
+      email: editEmail.trim().toLowerCase(),
+      avatar: editAvatar.trim() || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
+    };
+
+    if (onUpdateUser) {
+      onUpdateUser(updated);
+    }
+    setIsEditingProfile(false);
+    setEditError('');
+    addLog(`[IAM User Pool] Successfully saved updated profile details for "${updated.name}".`);
+    alert('Cognito user profile has been successfully updated.');
+  };
 
   // 2FA state
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
@@ -44,25 +104,6 @@ export default function UserProfile({
 
   // Wallet deposit state
   const [depositAmount, setDepositAmount] = useState(10000);
-
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!regName.trim() || !regEmail.trim() || !regPassword.trim()) {
-      alert('Please fill out all fields.');
-      return;
-    }
-    
-    // Simulate user creation (just notifying and logging since it is a demo environment)
-    addLog(`[IAM Sign-Up] Created new registered AWS Cognito User Account for "${regName}" (${regEmail}) with role ${regRole}.`);
-    alert(`Account created successfully! Switched to your new ${regRole} profile.`);
-    
-    // We can simulate log-in by mimicking switching user
-    onSwitchUser('usr_buyer'); // switch to buyer as base
-    setIsRegistering(false);
-    setRegName('');
-    setRegEmail('');
-    setRegPassword('');
-  };
 
   const handleRecovery = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,8 +151,8 @@ export default function UserProfile({
 
   if (!isLoggedIn) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-12 font-sans" id="user-profile-logged-out">
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden">
+      <div className="max-w-4xl mx-auto px-4 py-12 font-sans animate-fade-in" id="user-profile-logged-out">
+        <div className="bg-white rounded-2xl border border-gray-150 shadow-xl overflow-hidden">
           {/* Cognito Header */}
           <div className="bg-slate-900 text-white p-6 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -128,89 +169,312 @@ export default function UserProfile({
             </span>
           </div>
 
-          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Left side: Quick Selector */}
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+            {/* Left side: Secure Cloud Stack info */}
+            <div className="md:col-span-2 p-8 bg-slate-50/50 space-y-6">
               <div>
-                <h3 className="font-bold text-slate-900 text-sm mb-1.5 flex items-center gap-1.5">
-                  <User className="h-4 w-4 text-[#FF9900]" />
-                  Select Demo Active Profile
+                <h3 className="font-extrabold text-slate-900 text-sm mb-1.5 flex items-center gap-1.5 uppercase tracking-wider font-mono">
+                  <ShieldCheck className="h-4.5 w-4.5 text-[#FF9900]" />
+                  Secure IAM Stack
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Toggle instant token creation using any preloaded AWS marketplace demo personas:
+                  Your identity is secured by multi-region Cognito replicas, strict Web Application Firewall (WAF) policies, and hardware-backed KMS cryptographic key wraps.
                 </p>
               </div>
 
-              <div className="space-y-3 text-xs">
-                {users.map(u => (
-                  <button
-                    key={u.id}
-                    onClick={() => onLogin ? onLogin(u.id) : onSwitchUser(u.id)}
-                    className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-slate-100 hover:border-[#FF9900] hover:bg-amber-500/5 text-left cursor-pointer transition-all hover:scale-[1.01] bg-slate-50"
-                  >
-                    <img 
-                      src={u.avatar} 
-                      alt={u.name} 
-                      className="h-10 w-10 rounded-full object-cover border border-slate-100"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="truncate flex-1">
-                      <div className="font-bold text-xs text-slate-900 truncate leading-tight">{u.name}</div>
-                      <div className="text-[9px] font-mono uppercase text-gray-400 mt-0.5">{u.role}</div>
-                    </div>
-                    <span className="px-2.5 py-1 bg-white border border-slate-200 hover:border-[#FF9900] text-slate-600 font-extrabold text-[10px] rounded-lg tracking-wide uppercase transition-colors">
-                      Log In
-                    </span>
-                  </button>
-                ))}
+              <div className="space-y-3 font-mono text-[10px]">
+                <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+                  <div className="flex justify-between font-bold text-slate-700">
+                    <span>COGNITO REGION</span>
+                    <span className="text-[#FF9900]">us-east-1</span>
+                  </div>
+                  <p className="text-[9px] text-slate-400 font-sans">Multi-AZ replicated secure user directories.</p>
+                </div>
+
+                <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+                  <div className="flex justify-between font-bold text-slate-700">
+                    <span>ESCROW PROTECTION</span>
+                    <span className="text-emerald-600">Strict</span>
+                  </div>
+                  <p className="text-[9px] text-slate-400 font-sans">Sandbox transaction wallet is dynamically bound to verified JWT claims.</p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-amber-50/50 border border-amber-200/50 rounded-xl text-[11px] text-slate-600 space-y-1.5">
+                <span className="font-bold text-slate-800 block">🔒 High-Availability Cluster</span>
+                <p className="text-slate-500 leading-relaxed">
+                  To explore seller portals, inventory lists, or buyer features, configure your secure sandbox account.
+                </p>
               </div>
             </div>
 
-            {/* Right side: Credentials Form / Signup */}
-            <div className="space-y-6 border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-8">
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm mb-1.5 flex items-center gap-1.5">
-                  <Key className="h-4 w-4 text-[#FF9900]" />
-                  Cognito Identity Auth
-                </h3>
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  Authenticate using standard credentials or register secure mock federated email accounts below.
-                </p>
+            {/* Right side: Redesigned Credentials form */}
+            <div className="md:col-span-3 flex flex-col bg-white overflow-hidden">
+              {/* Mode Tabs */}
+              <div className="flex border-b border-slate-100 bg-slate-50/20">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileAuthMode('signin');
+                    setProfileError('');
+                  }}
+                  className={`flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+                    profileAuthMode === 'signin' 
+                      ? 'border-[#FF9900] text-slate-900 bg-white' 
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileAuthMode('signup');
+                    setProfileError('');
+                  }}
+                  className={`flex-1 py-4 text-center text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+                    profileAuthMode === 'signup' 
+                      ? 'border-[#FF9900] text-slate-900 bg-white' 
+                      : 'border-transparent text-slate-400 hover:text-slate-600'
+                  }`}
+                >
+                  Create Account
+                </button>
               </div>
 
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                if (onLogin) onLogin('usr_buyer');
-              }} className="space-y-3.5 text-xs">
-                <div>
-                  <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Cognito Username / Email</label>
-                  <input 
-                    type="email" 
-                    placeholder="siddusamarla14@gmail.com" 
-                    className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50"
-                    defaultValue="siddusamarla14@gmail.com"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Password</label>
-                  <input 
-                    type="password" 
-                    placeholder="••••••••••••" 
-                    className="w-full border border-slate-200 rounded-lg p-2.5 bg-slate-50"
-                    defaultValue="hunter2password"
-                    required
-                  />
-                </div>
+              <div className="p-8 space-y-6">
+                {profileError && (
+                  <div className="p-3.5 bg-rose-50 border border-rose-150 rounded-xl flex items-start gap-2.5 text-xs text-rose-800 leading-normal animate-scale-up">
+                    <AlertCircle className="h-4.5 w-4.5 text-rose-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-semibold">{profileError}</span>
+                      {profileError.includes('not registered') && (
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setProfileAuthMode('signup');
+                            setProfileError('');
+                          }}
+                          className="block font-bold text-[#FF9900] hover:underline mt-1 cursor-pointer"
+                        >
+                          Create a new account now &rarr;
+                        </button>
+                      )}
+                      {profileError.includes('already registered') && (
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setProfileAuthMode('signin');
+                            setProfileError('');
+                          }}
+                          className="block font-bold text-[#FF9900] hover:underline mt-1 cursor-pointer"
+                        >
+                          Sign in with your email now &rarr;
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
 
-                <button
-                  type="submit"
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5"
-                >
-                  <ShieldCheck className="h-4 w-4 text-[#FF9900]" />
-                  Secure Sign-In
-                </button>
-              </form>
+                {profileAuthMode === 'signin' ? (
+                  /* Sign In View */
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!signInEmail.trim() || !signInPassword) {
+                      setProfileError('Please enter both your email and password.');
+                      return;
+                    }
+                    const foundUser = users.find(u => u.email.toLowerCase() === signInEmail.trim().toLowerCase());
+                    if (!foundUser) {
+                      setProfileError('This email is not registered. Please switch to the Create Account tab.');
+                      return;
+                    }
+                    const userPassword = foundUser.password || 'hunter2password';
+                    if (userPassword !== signInPassword) {
+                      setProfileError('Invalid credentials. Please verify your password and try again.');
+                      return;
+                    }
+                    setProfileError('');
+                    if (onLogin) onLogin(foundUser.id);
+                  }} className="space-y-4 text-xs">
+                    <div>
+                      <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1.5">Cognito Email / Username</label>
+                      <input 
+                        type="email" 
+                        required
+                        placeholder="username@example.com" 
+                        value={signInEmail}
+                        onChange={e => setSignInEmail(e.target.value)}
+                        className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-slate-50"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-1.5">
+                        <label className="block font-bold text-slate-600 uppercase tracking-wider">Password</label>
+                        <a href="#forgot" onClick={(e) => {
+                          e.preventDefault();
+                          alert('SES recovery link sent! Check your email inbox.');
+                        }} className="text-[10px] font-bold text-[#FF9900] hover:underline">Forgot?</a>
+                      </div>
+                      <div className="relative">
+                        <input 
+                          type={showPassword ? "text" : "password"} 
+                          required
+                          placeholder="••••••••••••" 
+                          value={signInPassword}
+                          onChange={e => setSignInPassword(e.target.value)}
+                          className="w-full border border-slate-200 rounded-lg p-2.5 pr-10 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-slate-50"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5"
+                      >
+                        <ShieldCheck className="h-4 w-4 text-[#FF9900]" />
+                        Secure Sign-In
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  /* Sign Up / Registration View */
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!signUpName.trim() || !signUpEmail.trim() || !signUpPassword || !signUpPhone.trim()) {
+                      setProfileError('Please complete all fields.');
+                      return;
+                    }
+                    const exists = users.some(u => u.email.toLowerCase() === signUpEmail.trim().toLowerCase());
+                    if (exists) {
+                      setProfileError('This email is already registered. Please use the Sign In tab.');
+                      return;
+                    }
+
+                    const newUserId = 'usr_' + Date.now();
+                    const newUser: UserType = {
+                      id: newUserId,
+                      name: signUpName.trim(),
+                      email: signUpEmail.trim().toLowerCase(),
+                      role: signUpRole,
+                      avatar: signUpRole === 'buyer' 
+                        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150' 
+                        : 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150',
+                      balance: signUpBalance,
+                      password: signUpPassword
+                    };
+
+                    if (onRegister) onRegister(newUser);
+                    setProfileError('');
+                    addLog(`[IAM Sign-Up] Registered new Cognito identity account for "${signUpName}" (${signUpEmail}).`);
+                    
+                    // Directly trigger MFA verification
+                    if (onLogin) onLogin(newUserId);
+                  }} className="space-y-4 text-xs">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1.5">Full Name</label>
+                        <input 
+                          type="text" 
+                          required
+                          placeholder="Your full name" 
+                          value={signUpName}
+                          onChange={e => setSignUpName(e.target.value)}
+                          className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-slate-50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1.5">Cognito Email</label>
+                        <input 
+                          type="email" 
+                          required
+                          placeholder="your@email.com" 
+                          value={signUpEmail}
+                          onChange={e => setSignUpEmail(e.target.value)}
+                          className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-slate-50"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1.5">MFA Mobile Phone</label>
+                        <input 
+                          type="tel" 
+                          required
+                          placeholder="+1 (555) 012-3456" 
+                          value={signUpPhone}
+                          onChange={e => setSignUpPhone(e.target.value)}
+                          className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-slate-50 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1.5">Password</label>
+                        <div className="relative">
+                          <input 
+                            type={showPassword ? "text" : "password"} 
+                            required
+                            placeholder="••••••••••••" 
+                            value={signUpPassword}
+                            onChange={e => setSignUpPassword(e.target.value)}
+                            className="w-full border border-slate-200 rounded-lg p-2.5 pr-10 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-slate-50"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1.5">Account Role</label>
+                        <select 
+                          value={signUpRole}
+                          onChange={e => setSignUpRole(e.target.value as 'buyer' | 'seller')}
+                          className="w-full border border-slate-200 rounded-lg p-2.5 bg-white focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none"
+                        >
+                          <option value="buyer">Buyer (Secure Escrow Wallet)</option>
+                          <option value="seller">Seller (Inventory Manager)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1.5">Wallet Balance (USD)</label>
+                        <input 
+                          type="number" 
+                          required
+                          min={0}
+                          value={signUpBalance}
+                          onChange={e => setSignUpBalance(Number(e.target.value))}
+                          className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-slate-50 font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        className="w-full bg-[#FF9900] hover:bg-amber-600 text-slate-950 font-extrabold py-3 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5"
+                      >
+                        <Plus className="h-4 w-4 text-slate-950" />
+                        Register & Verify Cognito MFA
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -225,31 +489,109 @@ export default function UserProfile({
         {/* Profile details & wallets */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-900 border-b border-gray-50 pb-4 mb-4">
-              My Profile Details
-            </h2>
-
-            <div className="flex flex-col sm:flex-row items-center gap-5">
-              <img 
-                src={currentUser.avatar} 
-                alt={currentUser.name} 
-                className="h-20 w-20 rounded-full object-cover border border-gray-100"
-                referrerPolicy="no-referrer"
-              />
-              <div className="flex-1 text-center sm:text-left">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <h3 className="text-lg font-bold text-gray-900">{currentUser.name}</h3>
-                  <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full font-mono uppercase w-fit mx-auto sm:mx-0">
-                    {currentUser.role}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400 font-mono mt-1 flex items-center justify-center sm:justify-start gap-1">
-                  <Mail className="h-3 w-3" />
-                  {currentUser.email}
-                </p>
-                <p className="text-xs text-gray-400 font-mono mt-0.5">UID: {currentUser.id}</p>
-              </div>
+            <div className="flex justify-between items-center border-b border-gray-50 pb-4 mb-4">
+              <h2 className="text-xl font-bold text-slate-900">
+                My Profile Details
+              </h2>
+              {!isEditingProfile && (
+                <button
+                  onClick={() => setIsEditingProfile(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-950 font-bold text-xs rounded-lg hover:bg-amber-500/20 transition-colors cursor-pointer"
+                >
+                  <Edit3 className="h-3.5 w-3.5" />
+                  Edit Profile
+                </button>
+              )}
             </div>
+
+            {isEditingProfile ? (
+              <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
+                {editError && (
+                  <div className="p-3 bg-rose-50 border border-rose-100 text-rose-800 rounded-lg flex items-center gap-2 font-medium">
+                    <AlertCircle className="h-4 w-4 text-rose-500" />
+                    <span>{editError}</span>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Full Name</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Email Address</label>
+                    <input 
+                      type="email" 
+                      required
+                      value={editEmail}
+                      onChange={e => setEditEmail(e.target.value)}
+                      className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Avatar Image URL</label>
+                  <input 
+                    type="url" 
+                    value={editAvatar}
+                    onChange={e => setEditAvatar(e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingProfile(false);
+                      setEditName(currentUser.name);
+                      setEditEmail(currentUser.email);
+                      setEditAvatar(currentUser.avatar);
+                    }}
+                    className="px-4 py-2 border border-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white font-extrabold rounded-lg hover:bg-slate-800 transition-colors cursor-pointer shadow-sm"
+                  >
+                    <Save className="h-4 w-4 text-[#FF9900]" />
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-center gap-5">
+                <img 
+                  src={currentUser.avatar} 
+                  alt={currentUser.name} 
+                  className="h-20 w-20 rounded-full object-cover border border-gray-100"
+                  referrerPolicy="no-referrer"
+                />
+                <div className="flex-1 text-center sm:text-left">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <h3 className="text-lg font-bold text-gray-900">{currentUser.name}</h3>
+                    <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full font-mono uppercase w-fit mx-auto sm:mx-0">
+                      {currentUser.role}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 font-mono mt-1 flex items-center justify-center sm:justify-start gap-1">
+                    <Mail className="h-3 w-3" />
+                    {currentUser.email}
+                  </p>
+                  <p className="text-xs text-gray-400 font-mono mt-0.5">UID: {currentUser.id}</p>
+                </div>
+              </div>
+            )}
 
             {/* Profile Security Checkboxes */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-100">
@@ -341,8 +683,11 @@ export default function UserProfile({
                 <button
                   key={u.id}
                   onClick={() => {
-                    onSwitchUser(u.id);
-                    addLog(`[Demo Switch] Signed into session with profile: "${u.name}" (${u.role.toUpperCase()}).`);
+                    // Pre-fill target and open credentials authentication dialog
+                    setSwitchingTargetUser(u);
+                    setSwitchEmailInput('');
+                    setSwitchPasswordInput('');
+                    setSwitchError('');
                   }}
                   className={`p-3.5 rounded-lg border-2 text-center transition-all cursor-pointer ${
                     currentUser.id === u.id 
@@ -364,112 +709,51 @@ export default function UserProfile({
           </div>
         </div>
 
-        {/* Auth simulations (Reg / Recover / 2FA) */}
+        {/* Auth simulations & Cognito Session Info */}
         <div className="space-y-6">
-          {/* Third party / email register simulation */}
+          {/* Active Session JWT Metadata */}
           <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm text-xs space-y-4">
-            <h3 className="font-bold text-slate-800 text-sm border-b border-gray-50 pb-3">
-              {isRegistering ? 'Cognito Federated Signup' : 'Cognito Secure Identity Auth'}
+            <h3 className="font-bold text-slate-800 text-sm border-b border-gray-50 pb-3 flex items-center gap-1.5">
+              <ShieldCheck className="h-4.5 w-4.5 text-[#FF9900]" />
+              Active IAM Credentials
             </h3>
+            
+            <p className="text-gray-500 leading-relaxed">
+              Dynamically assigned AWS security credentials for this session:
+            </p>
 
-            {isRegistering ? (
-              <form onSubmit={handleRegister} className="space-y-3">
-                <div>
-                  <label className="block font-semibold text-gray-500 uppercase tracking-wider mb-1">Full Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="John Doe"
-                    value={regName}
-                    onChange={e => setRegName(e.target.value)}
-                    required
-                    className="w-full border border-gray-200 rounded-lg p-2 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-gray-500 uppercase tracking-wider mb-1">Email Address</label>
-                  <input 
-                    type="email" 
-                    placeholder="john@example.com"
-                    value={regEmail}
-                    onChange={e => setRegEmail(e.target.value)}
-                    required
-                    className="w-full border border-gray-200 rounded-lg p-2 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-gray-500 uppercase tracking-wider mb-1">Account Purpose</label>
-                  <select 
-                    value={regRole} 
-                    onChange={e => setRegRole(e.target.value as any)}
-                    className="w-full border border-gray-200 rounded-lg p-2 text-xs bg-white"
-                  >
-                    <option value="buyer">Buy Second-Hand Vehicles</option>
-                    <option value="seller">Sell Second-Hand Vehicles</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-gray-500 uppercase tracking-wider mb-1">Password</label>
-                  <input 
-                    type="password" 
-                    placeholder="••••••••"
-                    value={regPassword}
-                    onChange={e => setRegPassword(e.target.value)}
-                    required
-                    className="w-full border border-gray-200 rounded-lg p-2 text-xs"
-                  />
-                </div>
-                <button 
-                  type="submit"
-                  className="w-full bg-slate-900 text-white font-bold py-2 rounded-lg cursor-pointer hover:bg-slate-800 text-xs transition-colors"
-                >
-                  Confirm Cloud Register
-                </button>
-                <p className="text-center text-[10px] text-gray-400 mt-1">
-                  Already have an account?{' '}
-                  <button type="button" onClick={() => setIsRegistering(false)} className="text-amber-500 font-bold hover:underline cursor-pointer">Log In</button>
-                </p>
-              </form>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-gray-500 leading-relaxed">
-                  Authenticate your identity using Google, Facebook, or Cognito User Pool credentials.
-                </p>
-
-                {/* Third Party buttons */}
-                <div className="grid grid-cols-2 gap-2">
-                  <button 
-                    onClick={() => handleThirdPartyLogin('Google')}
-                    className="flex items-center justify-center gap-1.5 py-2 px-3 border border-gray-200 rounded-lg hover:bg-gray-50 font-bold text-[11px] text-gray-700 cursor-pointer transition-colors"
-                  >
-                    <Chrome className="h-3.5 w-3.5 text-red-500" />
-                    Google Auth
-                  </button>
-                  <button 
-                    onClick={() => handleThirdPartyLogin('Facebook')}
-                    className="flex items-center justify-center gap-1.5 py-2 px-3 border border-gray-200 rounded-lg hover:bg-gray-50 font-bold text-[11px] text-gray-700 cursor-pointer transition-colors"
-                  >
-                    <Facebook className="h-3.5 w-3.5 text-blue-600" />
-                    Facebook Auth
-                  </button>
-                </div>
-
-                <div className="border-t border-gray-100 pt-3">
-                  <span className="block text-center text-gray-400 text-[10px] mb-2 font-mono uppercase">Or Cognito native registration</span>
-                  <button 
-                    onClick={() => setIsRegistering(true)}
-                    className="w-full py-2 border border-dashed border-gray-300 hover:border-gray-400 hover:bg-slate-50 text-slate-800 rounded-lg text-xs font-bold cursor-pointer transition-all"
-                  >
-                    Draft Email Credentials Registration
-                  </button>
-                </div>
+            <div className="space-y-2.5 font-mono text-[9px] text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <div>
+                <span className="font-extrabold text-slate-800 uppercase block">Cognito ID Token</span>
+                <span className="text-slate-400 block break-all leading-tight mt-0.5">eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eysubWFpbCI6ImN1cnJlbnRVc2VyIn0...</span>
               </div>
-            )}
+              <div className="border-t border-slate-200/50 pt-2">
+                <span className="font-extrabold text-slate-800 uppercase block">OAuth Token Scope</span>
+                <span className="text-[#FF9900] block mt-0.5">openid email aws.cognito.signin.user.admin</span>
+              </div>
+              <div className="border-t border-slate-200/50 pt-2">
+                <span className="font-extrabold text-slate-800 uppercase block">Session TTL Remaining</span>
+                <span className="text-emerald-600 block mt-0.5 flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  59 minutes (Auto-Renews)
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-1 flex items-center justify-between">
+              <button 
+                onClick={onLogout}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-2 rounded-lg cursor-pointer text-[11px] uppercase tracking-wider transition-colors shadow-sm flex items-center justify-center gap-1"
+              >
+                Sign Out Session
+              </button>
+            </div>
           </div>
 
           {/* Password recovery simulation */}
           <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm text-xs space-y-3">
             <h3 className="font-bold text-slate-800 text-sm border-b border-gray-50 pb-2 flex items-center gap-1.5">
-              <Key className="h-4 w-4 text-amber-500" />
+              <Key className="h-4 w-4 text-[#FF9900]" />
               Cognito Password Recovery
             </h3>
             <p className="text-gray-500 leading-relaxed">
@@ -483,11 +767,11 @@ export default function UserProfile({
                 value={recoveryEmail}
                 onChange={e => setRecoveryEmail(e.target.value)}
                 required
-                className="w-full border border-gray-200 rounded-lg p-2.5"
+                className="w-full border border-slate-200 rounded-lg p-2.5 focus:outline-none focus:border-[#FF9900]"
               />
               <button 
                 type="submit"
-                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2 rounded-lg cursor-pointer transition-colors"
+                className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-800 font-bold py-2 rounded-lg cursor-pointer transition-colors"
               >
                 Send Recovery Instructions
               </button>
@@ -541,6 +825,115 @@ export default function UserProfile({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Switch Account Credential Verification Modal */}
+      {switchingTargetUser && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in font-sans">
+          <div className="bg-white rounded-2xl max-w-md w-full border border-slate-150 shadow-2xl overflow-hidden">
+            <div className="bg-slate-950 p-5 text-white flex items-center justify-between border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-[#FF9900]" />
+                <span className="font-extrabold text-xs uppercase tracking-wider font-mono">Cognito Credentials Check</span>
+              </div>
+              <button 
+                onClick={() => setSwitchingTargetUser(null)}
+                className="text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3.5 bg-slate-50 p-3.5 rounded-xl border border-slate-150">
+                <img 
+                  src={switchingTargetUser.avatar} 
+                  alt={switchingTargetUser.name} 
+                  className="h-11 w-11 rounded-full object-cover border border-slate-200"
+                  referrerPolicy="no-referrer"
+                />
+                <div>
+                  <div className="font-extrabold text-slate-950 text-xs">{switchingTargetUser.name}</div>
+                  <div className="text-[10px] text-[#FF9900] font-mono uppercase tracking-wider mt-0.5">{switchingTargetUser.role} Profile</div>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-500 leading-relaxed">
+                For security reasons, switching accounts requires valid Cognito identity credentials. Please enter the email and password for this profile.
+              </p>
+
+              {switchError && (
+                <div className="p-3 bg-rose-50 border border-rose-150 rounded-lg flex items-center gap-2 text-[11px] text-rose-800 font-medium">
+                  <AlertCircle className="h-4 w-4 text-rose-500 flex-shrink-0" />
+                  <span>{switchError}</span>
+                </div>
+              )}
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (!switchEmailInput.trim() || !switchPasswordInput) {
+                  setSwitchError('Please enter both email and password.');
+                  return;
+                }
+                if (switchEmailInput.trim().toLowerCase() !== switchingTargetUser.email.toLowerCase()) {
+                  setSwitchError('The email entered does not match the requested profile.');
+                  return;
+                }
+                const expectedPassword = (switchingTargetUser as any).password || 'hunter2password';
+                if (switchPasswordInput !== expectedPassword) {
+                  setSwitchError('Invalid credentials. Password verification failed.');
+                  return;
+                }
+
+                // Successful verification!
+                onSwitchUser(switchingTargetUser.id);
+                addLog(`[IAM Auth] Switched session after verifying Cognito credentials for: "${switchingTargetUser.name}".`);
+                setSwitchingTargetUser(null);
+                alert(`Successfully authenticated as ${switchingTargetUser.name}!`);
+              }} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Cognito Email</label>
+                  <input 
+                    type="email" 
+                    required
+                    placeholder="Enter email for this profile"
+                    value={switchEmailInput}
+                    onChange={e => setSwitchEmailInput(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-slate-50 font-sans"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Password</label>
+                  <input 
+                    type="password" 
+                    required
+                    placeholder="••••••••••••"
+                    value={switchPasswordInput}
+                    onChange={e => setSwitchPasswordInput(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg p-2.5 focus:border-[#FF9900] focus:ring-1 focus:ring-[#FF9900] focus:outline-none bg-slate-50 font-sans"
+                  />
+                </div>
+
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSwitchingTargetUser(null)}
+                    className="flex-1 border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold py-2.5 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-2.5 rounded-xl cursor-pointer text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-[#FF9900]" />
+                    Verify & Sign In
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
