@@ -14,6 +14,8 @@ interface BuyerPortalProps {
   onAddReview: (targetUserId: string, rating: number, comment: string) => void;
   addLog: (msg: string) => void;
   onUpdateBalance?: (userId: string, amount: number) => void;
+  isLoggedIn: boolean;
+  onRequireLogin: () => void;
 }
 
 export default function BuyerPortal({
@@ -23,7 +25,9 @@ export default function BuyerPortal({
   onInitiateEscrow,
   onAddReview,
   addLog,
-  onUpdateBalance
+  onUpdateBalance,
+  isLoggedIn,
+  onRequireLogin
 }: BuyerPortalProps) {
   // Navigation & Details selection
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -150,6 +154,11 @@ export default function BuyerPortal({
 
   // Handle Checkout Click
   const handlePurchase = (vehicle: Vehicle) => {
+    if (!isLoggedIn) {
+      alert('Cognito Identity Check Required: You must sign in to initiate secure vehicle escrow transactions.');
+      onRequireLogin();
+      return;
+    }
     setCheckoutVehicle(vehicle);
     setPaymentMethod('card'); // default to card
     setCardNumber('');
