@@ -62,10 +62,19 @@ export default function Navbar({
             </button>
             
             <button
-              onClick={() => setCurrentTab('sell')}
+              onClick={() => {
+                if (isLoggedIn && currentUser?.role === 'buyer') {
+                  alert("Access Denied: Only users with the 'Seller' Cognito role can list vehicles for sale. Please register or switch to a Seller profile in your Profile tab.");
+                  return;
+                }
+                setCurrentTab('sell');
+              }}
               className={`px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                currentUser?.role === 'buyer' && isLoggedIn ? 'opacity-50 cursor-not-allowed' : ''
+              } ${
                 currentTab === 'sell' ? 'bg-[#FF9900] text-slate-950 font-extrabold shadow-sm' : 'text-slate-300 hover:bg-slate-800 hover:text-white'
               }`}
+              title={currentUser?.role === 'buyer' && isLoggedIn ? "Sellers only. To list a vehicle, please switch profiles." : "Sell your vehicles"}
             >
               <Tag className="h-3.5 w-3.5" />
               Sell Vehicles
@@ -173,8 +182,15 @@ export default function Navbar({
           Browse
         </button>
         <button 
-          onClick={() => setCurrentTab('sell')}
-          className={`cursor-pointer ${currentTab === 'sell' ? 'text-[#FF9900]' : 'hover:text-white'}`}
+          onClick={() => {
+            if (isLoggedIn && currentUser?.role === 'buyer') {
+              alert("Access Denied: Only users with the 'Seller' Cognito role can list vehicles for sale. Please register or switch to a Seller profile in your Profile tab.");
+              return;
+            }
+            setCurrentTab('sell');
+          }}
+          className={`cursor-pointer ${currentUser?.role === 'buyer' && isLoggedIn ? 'opacity-40 cursor-not-allowed' : ''} ${currentTab === 'sell' ? 'text-[#FF9900]' : 'hover:text-white'}`}
+          title={currentUser?.role === 'buyer' && isLoggedIn ? "Sellers only" : "Sell your vehicles"}
         >
           Sell
         </button>
