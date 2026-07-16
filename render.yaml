@@ -17,6 +17,7 @@
 #   - name: automotive-db
 #     plan: free
 
+ services:
   - type: web
     name: automotive-marketplace
     env: node
@@ -34,4 +35,3 @@
 databases:
   - name: automotive-db
     plan: free
-
