@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Vehicle, User, Review, Transaction, AppNotification, AWSMetrics 
 } from './types';
-import { INITIAL_USERS, INITIAL_VEHICLES, INITIAL_REVIEWS } from './data';
+import { INITIAL_USERS, INITIAL_VEHICLES, INITIAL_REVIEWS, DEFAULT_AVATAR } from './data';
 
 import Navbar from './components/Navbar';
 import BuyerPortal from './components/BuyerPortal';
@@ -23,7 +23,7 @@ const GUEST_USER: User = {
   name: 'Guest Explorer',
   email: 'guest@awsvehicles.com',
   role: 'buyer',
-  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
+  avatar: DEFAULT_AVATAR,
   balance: 0
 };
 
@@ -38,7 +38,12 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.map((u: any) => ({
+            ...u,
+            avatar: (u.avatar && (u.avatar.includes('unsplash.com') || u.avatar.includes('photo-'))) ? DEFAULT_AVATAR : (u.avatar || DEFAULT_AVATAR)
+          }));
+        }
       } catch (e) {}
     }
     return INITIAL_USERS.map(u => ({ ...u, password: 'hunter2password' }));
@@ -160,7 +165,11 @@ export default function App() {
       try {
         const parsed = JSON.parse(savedUsers);
         if (Array.isArray(parsed)) {
-          setUsers(parsed);
+          const cleaned = parsed.map((u: any) => ({
+            ...u,
+            avatar: (u.avatar && (u.avatar.includes('unsplash.com') || u.avatar.includes('photo-'))) ? DEFAULT_AVATAR : (u.avatar || DEFAULT_AVATAR)
+          }));
+          setUsers(cleaned);
         } else {
           const seeded = INITIAL_USERS.map(u => ({ ...u, password: 'hunter2password' }));
           setUsers(seeded);
@@ -579,6 +588,11 @@ export default function App() {
       addAwsLog(`[IAM Security] Blocked unauthenticated attempt to access route: /${tab}`);
       return;
     }
+    if (tab === 'sell' && isLoggedIn && currentUser.role === 'buyer') {
+      alert("Access Denied: Only users with the 'Seller' Cognito role can list vehicles for sale. Please register or switch to a Seller profile in your Profile tab.");
+      addAwsLog(`[IAM Security] Blocked user "${currentUser.name}" (role: buyer) from accessing the /sell route.`);
+      return;
+    }
     setCurrentTab(tab);
   };
 
@@ -615,6 +629,8 @@ export default function App() {
             onAddReview={handleAddReview}
             addLog={addAwsLog}
             onUpdateBalance={handleUpdateBalance}
+            isLoggedIn={isLoggedIn}
+            onRequireLogin={() => setCurrentTab('profile')}
           />
         )}
 
@@ -979,9 +995,7 @@ export default function App() {
                           email: signUpEmail.trim().toLowerCase(),
                           password: signUpPassword,
                           role: signUpRole,
-                          avatar: signUpRole === 'buyer' 
-                            ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150' 
-                            : 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150',
+                          avatar: DEFAULT_AVATAR,
                           balance: signUpBalance
                         };
                         
