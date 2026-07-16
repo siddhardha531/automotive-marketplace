@@ -1,12 +1,14 @@
 import { Vehicle, Review, User } from './types';
 
+export const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23cbd5e1' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2'/><circle cx='12' cy='7' r='4'/></svg>";
+
 export const INITIAL_USERS: User[] = [
   {
     id: 'usr_buyer',
     name: 'Siddharth Samarla',
     email: 'siddusamarla14@gmail.com',
     role: 'buyer',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+    avatar: DEFAULT_AVATAR,
     balance: 150000
   },
   {
@@ -14,7 +16,7 @@ export const INITIAL_USERS: User[] = [
     name: 'Robert Jenkins',
     email: 'robert.j@awsvehicles.com',
     role: 'seller',
-    avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=150',
+    avatar: DEFAULT_AVATAR,
     balance: 45000
   },
   {
@@ -22,7 +24,7 @@ export const INITIAL_USERS: User[] = [
     name: 'Sarah Connor',
     email: 'sconnor@motors.com',
     role: 'seller',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150',
+    avatar: DEFAULT_AVATAR,
     balance: 89000
   }
 ];
