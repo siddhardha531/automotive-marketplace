@@ -29,7 +29,7 @@ export default function BuyerPortal({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<VehicleType | 'all'>('all');
   const [selectedCondition, setSelectedCondition] = useState<VehicleCondition | 'all'>('all');
-  const [maxPrice, setMaxPrice] = useState<number>(60000);
+  const [maxPrice, setMaxPrice] = useState<number>(200000);
   const [minYear, setMinYear] = useState<number>(2015);
   const [selectedLocation, setSelectedLocation] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'price_asc' | 'price_desc' | 'year_desc' | 'mileage_asc'>('year_desc');
@@ -279,8 +279,8 @@ export default function BuyerPortal({
               <input 
                 type="range"
                 min={5000}
-                max={80000}
-                step={1000}
+                max={250000}
+                step={2000}
                 value={maxPrice}
                 onChange={e => setMaxPrice(parseInt(e.target.value))}
                 className="w-full accent-amber-500"
