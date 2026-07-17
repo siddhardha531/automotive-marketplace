@@ -572,7 +572,7 @@ export const INITIAL_VEHICLES: Vehicle[] = [
     condition: 'Excellent',
     vehicleType: 'car',
     images: [
-      'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800'
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSGHNNf_BHseBUzvgVn-y6efm40I1EC1P3D4XTzzgvqGQ&s=10'
     ],
     description: 'Sporty Honda Civic Sport in Aegean Blue Metallic. 2.0L 4-cylinder engine, 18-inch alloy wheels, center-outlet dual exhaust, Apple CarPlay, Android Auto, and Honda Sensing suite. Fun to drive, highly fuel-efficient, single-owner car with pristine dealer service record.',
     location: 'Chicago, IL',
