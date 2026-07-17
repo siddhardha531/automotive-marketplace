@@ -38,14 +38,14 @@ export default function Navbar({
           {/* Brand Logo & Title */}
           <div 
             onClick={() => setCurrentTab('browse')}
-            className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity"
+            className="flex items-center gap-3 cursor-pointer hover:opacity-95 transition-all"
           >
-            <div className="h-10 w-10 bg-[#FF9900]/10 rounded-xl flex items-center justify-center border border-[#FF9900]/30 shadow-inner">
-              <Cloud className="h-6 w-6 text-[#FF9900]" />
+            <div className="h-10 w-10 bg-gradient-to-tr from-[#FF9900]/20 to-[#FF9900]/5 rounded-xl flex items-center justify-center border border-[#FF9900]/40 shadow-md">
+              <Cloud className="h-5.5 w-5.5 text-[#FF9900]" />
             </div>
             <div>
-              <span className="text-sm font-bold tracking-tight text-white block">AWS Vehicle</span>
-              <span className="text-[10px] text-gray-400 font-mono block -mt-1 uppercase tracking-wider font-semibold">E-Commerce Marketplace</span>
+              <span className="text-base font-black tracking-tight text-white block font-display uppercase">AWS Vehicle</span>
+              <span className="text-[9px] text-[#FF9900] font-mono block -mt-1 uppercase tracking-widest font-bold">E-Commerce Marketplace</span>
             </div>
           </div>
 
@@ -160,7 +160,7 @@ export default function Navbar({
                   e.stopPropagation();
                   onLoginClick();
                 }}
-                className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-3 py-1.5 rounded-lg text-xs font-extrabold text-slate-950 transition-all cursor-pointer font-sans uppercase tracking-wider shadow-sm"
+                className="flex items-center gap-1.5 bg-[#FF9900] hover:bg-amber-600 border border-amber-600 px-3 py-1.5 rounded-lg text-xs font-extrabold text-slate-950 transition-all cursor-pointer font-sans uppercase tracking-wider shadow-sm"
                 title="Log In to AWS secure marketplace"
               >
                 <LogIn className="h-3.5 w-3.5 text-slate-950" />
