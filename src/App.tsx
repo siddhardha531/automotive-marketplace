@@ -600,8 +600,8 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       
       {/* Top Banner alert */}
-      <div className="bg-amber-500 text-slate-950 px-4 py-2 text-xs font-semibold text-center border-b border-amber-600 flex justify-center items-center gap-1.5 font-mono">
-        <ShieldCheck className="h-4 w-4" />
+      <div className="bg-[#FF9900] text-slate-950 px-4 py-1.5 text-[11px] font-extrabold text-center border-b border-[#e28700] flex justify-center items-center gap-1.5 font-mono uppercase tracking-wider">
+        <ShieldCheck className="h-4 w-4 text-slate-950 animate-pulse" />
         <span>SECURED AWS DEPLOYMENT: Sandbox escrow payments are live. Sign in via AWS Cognito to explore permissions.</span>
       </div>
 
@@ -631,6 +631,9 @@ export default function App() {
             onUpdateBalance={handleUpdateBalance}
             isLoggedIn={isLoggedIn}
             onRequireLogin={() => setCurrentTab('profile')}
+            transactions={transactions}
+            onReleaseEscrow={handleReleaseEscrow}
+            onRefundEscrow={handleRefundEscrow}
           />
         )}
 
@@ -640,6 +643,7 @@ export default function App() {
             currentUserId={currentUserId}
             currentUserName={currentUser.name}
             currentUserEmail={currentUser.email}
+            currentUserRole={currentUser?.role}
             onAddVehicle={handleAddVehicle}
             onUpdateVehicle={handleUpdateVehicle}
             onDeleteVehicle={handleDeleteVehicle}
@@ -692,7 +696,7 @@ export default function App() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Cloud className="h-5 w-5 text-[#FF9900]" />
-              <span className="font-extrabold text-white text-sm">AWS AutoMarket</span>
+              <span className="font-extrabold text-white text-sm">Aegis Escrow</span>
             </div>
             <p className="leading-relaxed">
               Highly secure cloud native second-hand vehicle e-commerce, built directly for Amazon Web Services (AWS) deployments. Powered by serverless microservices and multi-AZ data replication.
@@ -728,7 +732,7 @@ export default function App() {
             &copy; {new Date().getFullYear()} AWS Second-Hand Vehicles Marketplace. All rights reserved.
           </div>
           <div className="flex gap-4 font-mono text-[10px] items-center">
-            <span className="text-emerald-500 font-bold flex items-center gap-1">
+            <span className="text-amber-500 font-bold flex items-center gap-1">
               <ShieldCheck className="h-4 w-4" /> System Health: Optimal
             </span>
             <span className="text-slate-600">|</span>
@@ -761,18 +765,18 @@ export default function App() {
                   <div className="space-y-3 font-mono text-[10px]">
                     <div className="flex items-center justify-between p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
                       <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                        <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
                         <span className="text-slate-300">Cognito User Pool</span>
                       </div>
-                      <span className="text-[9px] text-emerald-400 font-bold uppercase">Active</span>
+                      <span className="text-[9px] text-amber-400 font-bold uppercase">Active</span>
                     </div>
  
                     <div className="flex items-center justify-between p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
                       <div className="flex items-center gap-2">
-                        <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                        <span className="h-2 w-2 rounded-full bg-amber-400" />
                         <span className="text-slate-300">WAF Protection</span>
                       </div>
-                      <span className="text-[9px] text-emerald-400 font-bold uppercase">Strict</span>
+                      <span className="text-[9px] text-amber-400 font-bold uppercase">Strict</span>
                     </div>
  
                     <div className="flex items-center justify-between p-2.5 bg-slate-900/60 rounded-lg border border-slate-800">
