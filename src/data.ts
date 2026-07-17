@@ -63,8 +63,7 @@ export const INITIAL_VEHICLES: Vehicle[] = [
     condition: 'Excellent',
     vehicleType: 'suv',
     images: [
-      'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800',
-      'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80&w=800'
+      'https://imgd.aeplcdn.com/1920x1080/n/cw/ec/174975/wrangler-exterior-right-front-three-quarter-34.png?isig=0&q=80&q=80'
     ],
     description: 'Fully loaded Rubicon prepared for overland adventuring. Features a 2-inch suspension lift, 35-inch BFGoodrich All-Terrain tires, premium winch, steel bumpers, and cold weather package (heated seats/steering). Meticulously serviced at Jeep dealership.',
     location: 'Denver, CO',
@@ -153,7 +152,7 @@ export const INITIAL_VEHICLES: Vehicle[] = [
     condition: 'Good',
     vehicleType: 'car',
     images: [
-      'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=800'
+      'https://claveyscorner.com/wp-content/uploads/2020/01/2020-Honda-Civic-Sport-Driving-Front.jpg'
     ],
     description: 'Championship White Civic Type R. 306-horsepower turbo 2.0L. Completely unmodified, rare to find in this clean condition. Features Brembo front brakes, active damper system, customized standard bucket seats, 20-inch wheels. Fully serviced at local Honda dealer.',
     location: 'Chicago, IL',
@@ -329,7 +328,7 @@ export const INITIAL_VEHICLES: Vehicle[] = [
     condition: 'Excellent',
     vehicleType: 'car',
     images: [
-      'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&q=80&w=800'
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRi4WU0bA_N-p0xDafjiEMCRS4u2gCnH4TYjOqtS3vMaQ&s=10'
     ],
     description: 'Menacing Shadow Black Shelby GT500 with painted over-the-top stripes. Supercharged 5.2L V8 producing 760 HP. Tremec 7-speed dual-clutch transmission. Recaro leather seats, Technology Package, carbon fiber interior accents. Sounds incredible, runs flawlessly, clear protective film on front.',
     location: 'Austin, TX',
@@ -462,7 +461,7 @@ export const INITIAL_VEHICLES: Vehicle[] = [
     condition: 'New',
     vehicleType: 'car',
     images: [
-      'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&q=80&w=800'
+      'https://stimg.cardekho.com/images/carexteriorimages/630x420/Tesla/Model-S/5252/1752499273852/front-left-side-47.jpg'
     ],
     description: 'Incredible Tesla Model S Plaid in Solid Black with Carbon Fiber trim and yoke steering wheel. Tri-Motor AWD system pumping out a staggering 1,020 HP (0-60 MPH in 1.99s). Features standard autopilot, sub-zero weather package, 21-inch Arachnid wheels, and 17-inch cinematic center display. Absolutely immaculate condition inside and out.',
     location: 'San Francisco, CA',
@@ -529,7 +528,7 @@ export const INITIAL_VEHICLES: Vehicle[] = [
     condition: 'Excellent',
     vehicleType: 'motorcycle',
     images: [
-      'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&q=80&w=800'
+      'https://c.ndtvimg.com/2026-03/jo29ucac_vespa-sprint-s_625x300_21_March_26.jpg?im=FeatureCrop,algorithm=dnn,width=1200,height=800'
     ],
     description: 'Charming Vespa Primavera 150 in Mint Green. Single-cylinder 4-stroke 150cc engine with electronic injection. Excellent fuel mileage, lightweight, retro styling with modern LED lighting and front disc brake with ABS. Perfect city commuter or beach cruiser. Comes with a matching rear top box.',
     location: 'Miami, FL',
