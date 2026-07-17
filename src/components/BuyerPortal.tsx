@@ -2,9 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { 
   Search, SlidersHorizontal, MapPin, Calendar, Compass, Star, 
   ShieldCheck, Phone, Mail, DollarSign, X, Check, ArrowRight, User,
-  CreditCard, Lock, Building, CheckCircle2, Wallet, AlertCircle
+  CreditCard, Lock, Building, CheckCircle2, Wallet, AlertCircle, Car
 } from 'lucide-react';
-import { Vehicle, VehicleType, VehicleCondition, Review, User as UserType } from '../types';
+import { Vehicle, VehicleType, VehicleCondition, Review, User as UserType, Transaction, ListingStatus } from '../types';
 
 interface BuyerPortalProps {
   vehicles: Vehicle[];
@@ -16,6 +16,9 @@ interface BuyerPortalProps {
   onUpdateBalance?: (userId: string, amount: number) => void;
   isLoggedIn: boolean;
   onRequireLogin: () => void;
+  transactions?: Transaction[];
+  onReleaseEscrow?: (txId: string) => void;
+  onRefundEscrow?: (txId: string) => void;
 }
 
 export default function BuyerPortal({
@@ -27,7 +30,10 @@ export default function BuyerPortal({
   addLog,
   onUpdateBalance,
   isLoggedIn,
-  onRequireLogin
+  onRequireLogin,
+  transactions = [],
+  onReleaseEscrow,
+  onRefundEscrow
 }: BuyerPortalProps) {
   // Navigation & Details selection
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -104,6 +110,40 @@ export default function BuyerPortal({
     
     return resultMap;
   }, [reviews]);
+
+  // Filter transactions owned by this user
+  const purchasedTransactions = useMemo(() => {
+    if (!isLoggedIn || !currentUser || currentUser.role !== 'buyer') return [];
+    return transactions.filter(t => t.buyerId === currentUser.id && (t.status === 'escrow_pending' || t.status === 'released' || t.status === 'refunded'));
+  }, [transactions, isLoggedIn, currentUser]);
+
+  // Match purchased transactions to actual or reconstructed vehicle detail records
+  const purchasedVehiclesWithTx = useMemo(() => {
+    return purchasedTransactions.map(tx => {
+      const foundVeh = vehicles.find(v => v.id === tx.vehicleId);
+      return {
+        tx,
+        vehicle: foundVeh || {
+          id: tx.vehicleId,
+          make: tx.vehicleDetails.make,
+          model: tx.vehicleDetails.model,
+          year: tx.vehicleDetails.year,
+          price: tx.amount,
+          images: ['https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800'], // fallback image
+          condition: 'Excellent' as VehicleCondition,
+          vehicleType: 'car' as VehicleType,
+          description: 'AWS KMS Cryptographic escrow secured vehicle.',
+          location: 'AWS Cloud Custody',
+          sellerId: tx.sellerId,
+          sellerName: tx.sellerName,
+          sellerEmail: '',
+          sellerPhone: '',
+          status: (tx.status === 'escrow_pending' ? 'pending' : 'sold') as ListingStatus,
+          createdAt: tx.createdAt
+        }
+      };
+    });
+  }, [purchasedTransactions, vehicles]);
 
   // Filter & Sort Logic
   const filteredVehicles = useMemo(() => {
@@ -294,38 +334,213 @@ export default function BuyerPortal({
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans" id="buyer-portal-root">
       {/* Search Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-6 md:p-10 text-white shadow-lg mb-8 relative overflow-hidden">
-        <div className="relative z-10 max-w-2xl">
-          <span className="text-xs bg-amber-500/90 text-slate-900 font-bold px-2.5 py-1 rounded font-mono uppercase tracking-wider mb-3 inline-block">
-            Secure AWS Escrow Shield Enabled
-          </span>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2 leading-tight">
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-[#1e1b4b] rounded-2xl p-8 md:p-12 text-white border border-slate-800 shadow-2xl mb-8 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#FF9900]/5 rounded-full blur-3xl -z-10" />
+        <div className="relative z-10 max-w-3xl">
+          <div className="inline-flex items-center bg-[#FF9900] text-slate-950 text-[10px] font-bold px-2.5 py-0.5 rounded font-mono uppercase tracking-wider mb-5">
+            SECURE AWS ESCROW SHIELD ENABLED
+          </div>
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-3 leading-tight font-display">
             Find & Purchase Verified Second-Hand Vehicles
           </h1>
-          <p className="text-sm md:text-base text-slate-300 leading-relaxed mb-6">
+          <p className="text-sm md:text-base text-slate-300 leading-relaxed mb-8 max-w-2xl font-light">
             Browse reliable pre-owned listings. Every single purchase is locked in our AWS Key Management Service (KMS) escrow smart contract to safeguard your hard-earned funds.
           </p>
 
           {/* Search Bar Input */}
-          <div className="flex bg-white rounded-xl shadow-md overflow-hidden p-1.5 text-gray-800 focus-within:ring-2 focus-within:ring-amber-500/50 transition-all max-w-lg">
-            <div className="pl-3 pr-2 flex items-center text-gray-400">
-              <Search className="h-5 w-5" />
+          <div className="flex bg-white border border-slate-200 focus-within:border-[#FF9900] focus-within:ring-4 focus-within:ring-[#FF9900]/20 rounded-xl shadow-lg overflow-hidden p-1.5 text-slate-900 transition-all max-w-xl">
+            <div className="pl-3.5 pr-2 flex items-center text-slate-400">
+              <Search className="h-5 w-5 text-slate-400" />
             </div>
             <input 
               type="text"
               placeholder="Search by model, brand, spec, year, keywords..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full text-sm border-0 focus:outline-none p-1.5 focus:ring-0 text-slate-900"
+              className="w-full text-sm bg-transparent border-0 focus:outline-none p-2 text-slate-800 placeholder-slate-400 font-sans"
             />
           </div>
         </div>
 
         {/* Dynamic Background visual asset */}
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 opacity-10 pointer-events-none hidden md:block">
-          <Compass className="w-full h-full text-white rotate-12" />
+        <div className="absolute -right-6 bottom-0 top-0 w-1/3 opacity-15 pointer-events-none hidden lg:flex items-center justify-center z-0">
+          <div className="relative w-80 h-80 rounded-full border-[16px] border-slate-700/30 flex items-center justify-center">
+            <div className="w-60 h-60 rounded-full border-[8px] border-slate-700/20 flex items-center justify-center">
+              <div className="w-40 h-40 border-[14px] border-slate-500/30 rounded-[32px] transform rotate-12 skew-x-12 flex items-center justify-center">
+                <div className="w-20 h-20 border-[8px] border-slate-500/20 rounded-[16px]" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* 🔒 My Purchased Vehicles Block */}
+      {isLoggedIn && currentUser?.role === 'buyer' && (
+        <div className="bg-slate-900 border-2 border-[#FF9900]/30 rounded-2xl p-6 mb-8 text-white shadow-xl" id="purchased-vehicles-block">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800 pb-4 mb-5 gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-[#FF9900] border border-amber-500/30">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+              <div>
+                <h2 className="font-extrabold text-base tracking-tight text-white flex items-center gap-2">
+                  My Purchased Vehicles
+                </h2>
+                <p className="text-[11px] text-slate-400 mt-0.5">Vehicles currently locked in or released from secure AWS KMS Escrow contracts</p>
+              </div>
+            </div>
+            <span className="self-start sm:self-auto text-[10px] font-mono bg-amber-500/20 text-[#FF9900] font-bold px-3 py-1 rounded-full border border-amber-500/30 uppercase tracking-widest">
+              Secured Vault Storage
+            </span>
+          </div>
+
+          {purchasedVehiclesWithTx.length === 0 ? (
+            <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
+              <div className="h-12 w-12 bg-slate-800 rounded-full flex items-center justify-center text-slate-400 border border-slate-700 animate-pulse">
+                <Car className="h-6 w-6" />
+              </div>
+              <div className="space-y-1.5 max-w-sm">
+                <h4 className="font-extrabold text-sm text-slate-200">No Escrow Purchases Yet</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Your secure vehicle vault is empty. Browse the available listings below and click <strong className="text-white">"Initiate Secure Escrow Purchase"</strong> to deposit funds and hold assets in escrow.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {purchasedVehiclesWithTx.map(({ tx, vehicle }) => {
+                const rating = sellerRatings[vehicle.sellerId] || 5;
+                const isPending = tx.status === 'escrow_pending';
+                const isReleased = tx.status === 'released';
+                const isRefunded = tx.status === 'refunded';
+
+                return (
+                  <div 
+                    key={tx.id} 
+                    className="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden flex flex-col shadow-inner relative group hover:border-[#FF9900]/30 transition-all duration-300"
+                  >
+                    {/* Vehicle Thumbnail */}
+                    <div className="relative h-40 overflow-hidden bg-slate-900">
+                      <img 
+                        src={vehicle.images[0]} 
+                        alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                      
+                      {/* Status Badge */}
+                      <div className="absolute top-3 right-3 z-10">
+                        {isPending && (
+                          <span className="bg-amber-500/95 text-slate-950 font-extrabold px-2.5 py-1 rounded text-[10px] font-mono flex items-center gap-1 shadow-md">
+                            <Lock className="h-3 w-3" />
+                            Escrow Pending
+                          </span>
+                        )}
+                        {isReleased && (
+                          <span className="bg-amber-500/95 text-white font-extrabold px-2.5 py-1 rounded text-[10px] font-mono flex items-center gap-1 shadow-md">
+                            <Check className="h-3 w-3 text-white" />
+                            Released (Owned)
+                          </span>
+                        )}
+                        {isRefunded && (
+                          <span className="bg-rose-500/95 text-white font-extrabold px-2.5 py-1 rounded text-[10px] font-mono flex items-center gap-1 shadow-md">
+                            <AlertCircle className="h-3 w-3" />
+                            Refunded
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="absolute bottom-3 left-3 bg-slate-900/85 backdrop-blur-xs text-slate-300 px-2 py-0.5 rounded text-[9px] font-mono">
+                        Tx Ref: {tx.id}
+                      </div>
+                    </div>
+
+                    {/* Body Info */}
+                    <div className="p-4 flex-grow flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start mb-1.5">
+                          <h3 className="font-extrabold text-sm text-white">{vehicle.year} {vehicle.make} {vehicle.model}</h3>
+                          <span className="font-mono text-sm font-black text-[#FF9900]">{formatPrice(tx.amount)}</span>
+                        </div>
+
+                        <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed mb-4">
+                          {vehicle.description}
+                        </p>
+
+                        <div className="border-t border-slate-900 pt-3 pb-3 space-y-1.5 text-[10px] font-mono text-slate-400">
+                          <div className="flex justify-between">
+                            <span>Seller:</span>
+                            <span className="font-bold text-white">{tx.sellerName}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Purchase Date:</span>
+                            <span className="text-slate-300">{new Date(tx.createdAt).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Condition Rank:</span>
+                            <span className="text-amber-400 uppercase font-bold">{vehicle.condition}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Manage Escrow Actions for Buyer */}
+                      <div className="pt-3 border-t border-slate-900 mt-2">
+                        {isPending ? (
+                          <div className="space-y-2">
+                            <p className="text-[10px] text-amber-500 bg-amber-500/5 p-2 rounded border border-amber-500/10 leading-relaxed font-sans">
+                              Funds are safely locked in Escrow. Once you physically receive and verify the vehicle, please confirm delivery to release funds to the seller.
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm(`Are you sure you have received the ${vehicle.year} ${vehicle.make} ${vehicle.model} and want to disburse $${tx.amount.toLocaleString()} to ${tx.sellerName}? This operation is cryptographically signed and irreversible.`)) {
+                                    if (onReleaseEscrow) {
+                                      onReleaseEscrow(tx.id);
+                                    }
+                                  }
+                                }}
+                                className="flex-grow bg-amber-600 hover:bg-amber-500 text-white font-extrabold py-2 px-3 rounded-lg text-[10px] uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-1 shadow-sm"
+                              >
+                                <Check className="h-3 w-3" />
+                                Release Funds
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm(`Are you sure you want to request a full escrow refund of $${tx.amount.toLocaleString()} for the ${vehicle.year} ${vehicle.make} ${vehicle.model}? Funds will be instantly returned to your ledger balance.`)) {
+                                    if (onRefundEscrow) {
+                                      onRefundEscrow(tx.id);
+                                    }
+                                  }
+                                }}
+                                className="bg-slate-800 hover:bg-slate-700 hover:text-rose-400 text-slate-300 font-bold py-2 px-2.5 rounded-lg text-[10px] uppercase tracking-wider transition-all cursor-pointer"
+                                title="Request Escrow Refund"
+                              >
+                                Refund
+                              </button>
+                            </div>
+                          </div>
+                        ) : isReleased ? (
+                          <div className="bg-amber-950/30 border border-amber-900/30 rounded-lg p-2.5 text-center text-[10px] text-amber-400 font-sans flex items-center justify-center gap-1.5">
+                            <CheckCircle2 className="h-4 w-4 text-amber-500" />
+                            <span>Delivered & Verified. Funds released to seller.</span>
+                          </div>
+                        ) : (
+                          <div className="bg-rose-950/20 border border-rose-900/20 rounded-lg p-2.5 text-center text-[10px] text-rose-400 font-sans flex items-center justify-center gap-1.5">
+                            <AlertCircle className="h-4 w-4 text-rose-500" />
+                            <span>Transaction Refunded & Reversed.</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Filters Sidebar */}
@@ -607,7 +822,7 @@ export default function BuyerPortal({
 
                 <div className="flex flex-col items-end">
                   <span className="text-[10px] text-slate-400 font-mono block">YOUR WALLET BALANCE</span>
-                  <span className={`text-sm font-bold font-mono ${(currentUser?.balance ?? 0) >= selectedVehicle.price ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`text-sm font-bold font-mono ${(currentUser?.balance ?? 0) >= selectedVehicle.price ? 'text-amber-400' : 'text-red-400'}`}>
                     {formatPrice(currentUser?.balance ?? 0)}
                   </span>
                 </div>
@@ -1075,7 +1290,7 @@ export default function BuyerPortal({
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500">AWS Processing Fee</span>
-                    <span className="font-mono text-emerald-600 font-bold">FREE ($0)</span>
+                    <span className="font-mono text-amber-600 font-bold">FREE ($0)</span>
                   </div>
                   <div className="border-t border-slate-150 pt-3 flex justify-between items-center text-sm font-bold">
                     <span className="text-slate-800">Total Escrow Amount</span>
@@ -1098,8 +1313,8 @@ export default function BuyerPortal({
                       {/* Card Header */}
                       <div className="flex justify-between items-start z-10">
                         <div className="flex items-center gap-1.5 bg-white/10 px-2 py-0.5 rounded-md border border-white/10">
-                          <Lock className="h-3 w-3 text-emerald-400" />
-                          <span className="text-[8px] font-mono tracking-widest text-emerald-400 uppercase font-black">Secure</span>
+                          <Lock className="h-3 w-3 text-amber-400" />
+                          <span className="text-[8px] font-mono tracking-widest text-amber-400 uppercase font-black">Secure</span>
                         </div>
                         <div className="font-bold text-xs font-mono tracking-widest text-white/90">
                           {cardType === 'Visa' ? 'VISA' : cardType === 'MasterCard' ? 'MASTERCARD' : 'STRIPE'}
@@ -1194,7 +1409,7 @@ export default function BuyerPortal({
                 ) : paymentSuccess ? (
                   /* Success View */
                   <div className="h-full flex flex-col items-center justify-center py-16 space-y-6">
-                    <div className="h-16 w-16 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center text-emerald-500 shadow-inner">
+                    <div className="h-16 w-16 bg-amber-50 border border-amber-200 rounded-full flex items-center justify-center text-amber-500 shadow-inner">
                       <CheckCircle2 className="h-10 w-10 animate-bounce" />
                     </div>
                     <div className="text-center space-y-2">
@@ -1267,7 +1482,7 @@ export default function BuyerPortal({
                             placeholder="John Doe"
                           />
                         </div>
-
+ 
                         <div>
                           <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Card Number (Auto-formatting)</label>
                           <div className="relative">
@@ -1284,7 +1499,7 @@ export default function BuyerPortal({
                             </div>
                           </div>
                         </div>
-
+ 
                         <div className="grid grid-cols-3 gap-3">
                           <div className="col-span-2">
                             <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Expiration (MM/YY)</label>
@@ -1311,7 +1526,7 @@ export default function BuyerPortal({
                             />
                           </div>
                         </div>
-
+ 
                         <div>
                           <label className="block font-bold text-slate-600 uppercase tracking-wider mb-1">Billing Zip / Postal Code</label>
                           <input
@@ -1344,25 +1559,25 @@ export default function BuyerPortal({
                             <span className="text-slate-800">Remaining Wallet Balance</span>
                             <span className={`font-mono font-black ${
                               (currentUser?.balance ?? 0) >= checkoutVehicle.price 
-                                ? 'text-emerald-600' 
+                                ? 'text-amber-600' 
                                 : 'text-rose-600'
                             }`}>
                               {formatPrice((currentUser?.balance ?? 0) - checkoutVehicle.price)}
                             </span>
                           </div>
                         </div>
-
+ 
                         {(currentUser?.balance ?? 0) >= checkoutVehicle.price ? (
-                          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-2.5 text-xs text-emerald-800 leading-relaxed">
-                            <Check className="h-4.5 w-4.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 leading-relaxed">
+                            <Check className="h-4.5 w-4.5 text-amber-600 flex-shrink-0 mt-0.5" />
                             <div>
                               <p className="font-bold">Sufficient Wallet Funds</p>
-                              <p className="text-emerald-700 mt-0.5">Your sandbox ledger wallet is fully funded. No external credit card transactions are needed.</p>
+                              <p className="text-amber-700 mt-0.5">Your sandbox ledger wallet is fully funded. No external credit card transactions are needed.</p>
                             </div>
                           </div>
                         ) : (
                           <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 leading-relaxed">
-                            <AlertCircle className="h-4.5 w-4.5 text-[#FF9900] flex-shrink-0 mt-0.5 animate-pulse" />
+                            <AlertCircle className="h-4.5 w-4.5 text-amber-500 flex-shrink-0 mt-0.5 animate-pulse" />
                             <div>
                               <p className="font-bold">Insufficient Sandbox Balance</p>
                               <p className="text-amber-700 mt-0.5">Your balance is too low. Please switch to the "Credit/Debit Card" tab to process this order instantly and credit your sandbox account.</p>
